@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import extension from "./thought-layer.ts";
+import extension from "../extensions/thought-layer.ts";
 
 // Load the Pi extension with a mock `pi` and capture what it registers. This
 // verifies, with no model and no network, that the factory loads, all three

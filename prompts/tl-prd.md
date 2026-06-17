@@ -1,0 +1,1 @@
+Apply the **thought-layer-prd** skill. Compose a complete, buildable PRD from everything validated so far (the idea, the business model, and the grill's glossary and requirements). Keep the ubiquitous language exact. Carry any open to-dos forward. Output only the markdown document.

@@ -1,0 +1,52 @@
+{
+  "name": "@hobocode/thought-layer",
+  "version": "0.1.0",
+  "description": "The Thought Layer: rigor for building. Validate an idea, grill it into a buildable spec, then build and deploy it, inside the agent you already use. BYOK, no telemetry.",
+  "license": "MIT",
+  "author": "Hobocode LLC <jerm@hobocode.net>",
+  "homepage": "https://weareallproductmanagersnow.com",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "agent-skills",
+    "claude-code",
+    "product-validation",
+    "prd",
+    "domain-driven-design"
+  ],
+  "pi": {
+    "skills": ["./skills"],
+    "extensions": ["./extensions"],
+    "prompts": ["./prompts"]
+  },
+  "exports": {
+    "./core": "./core/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "files": [
+    "skills",
+    "extensions",
+    "prompts",
+    "core",
+    "README.md",
+    "LICENSE"
+  ]
+}

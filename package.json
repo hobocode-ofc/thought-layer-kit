@@ -19,6 +19,9 @@
     "extensions": ["./extensions"],
     "prompts": ["./prompts"]
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     "./core": "./core/index.ts"
   },
@@ -45,7 +48,10 @@
     "skills",
     "extensions",
     "prompts",
-    "core",
+    "core/index.ts",
+    "core/scoring.ts",
+    "core/domains.ts",
+    "core/model.ts",
     "README.md",
     "LICENSE"
   ]

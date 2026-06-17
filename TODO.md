@@ -8,7 +8,9 @@ Things only you can do. Claude keeps adding to this as it builds; you check them
 - [x] git init + first commit + push. DONE, published public at https://github.com/hobocode-ofc/thought-layer-kit
 
 ## npm + distribution
-- [ ] Create / claim the `@hobocode` npm scope (npm org), then `npm publish --access public` when ready.
+- [x] Package prepped for publish (2026-06-17): `publishConfig.access=public` added; `files` narrowed so `core/*.test.ts` don't ship; tsc clean, 33 tests pass, `npm pack --dry-run` = 22 files / 45.4 kB.
+- [ ] `npm login` (your account; first publish). Then check your scope: if `npm whoami` is NOT `hobocode`, create a FREE npm org named `hobocode` (npmjs.com -> Add Organization -> free tier for public packages) so the `@hobocode` scope is yours.
+- [ ] Publish from the repo root: `npm publish` (publishConfig already forces public; add `--otp=123456` if you have 2FA). Then verify: `npm view @hobocode/thought-layer` and `pi install npm:@hobocode/thought-layer`.
 - [ ] List the package in Pi's `/packages` marketplace once published.
 
 ## Testing in real environments

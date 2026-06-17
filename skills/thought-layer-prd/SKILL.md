@@ -17,7 +17,7 @@ Write in clear prose with markdown headings:
 - Market and why now
 - Personas
 - Domain glossary (first cut)
-- Goals and success metrics
+- Goals and success metrics (honest outcomes, not vanity)
 - Failure signals
 - Requirements, organized by category, each with an R number
 - Critical user journeys
@@ -33,5 +33,6 @@ Write in clear prose with markdown headings:
 - Keep the ubiquitous language exact: use the glossary's terms for entities, fields, and UI labels throughout.
 - This is the **pre-grill draft**, not the final word. Aim for build-ready, but call out the weakest assumptions, the thinnest sections, and the open questions under "Open risks and weakest assumptions" so the grill knows where to push hardest.
 - Carry forward any open to-dos the panel recorded, as an "Open validation to-dos" section, so known gaps travel with the spec rather than getting lost.
+- Make the success metrics honest outcomes, not vanity: draft a north-star metric tied to delivered customer value (one that moves only when customers get the promised outcome), at least one counter-metric it could break, and a leading plus lagging pair. The grill holds these to its metric-honesty rule.
 
 Output only the markdown document, no preamble.

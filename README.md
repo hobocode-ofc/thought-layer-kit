@@ -12,8 +12,9 @@ This is open source and BYOK by design. The point is to help people build real t
 
 **The rigor, as portable [Agent Skills](https://www.anthropic.com/news/skills)** (work in any agent that reads the format):
 
-- **thought-layer-panel.** Pressure-test an idea or any answer with an adversarial panel (red team, domain expert, skeptical investor). Get a confidence score, a letter grade, and at most three material fixes, looping until it is genuinely good enough or you set it aside.
-- **thought-layer-grill.** A domain-driven discovery interview that turns a validated idea into a domain glossary plus testable requirements.
+- **thought-layer-framework.** The backbone. Walks a founder through the full staged framework in order: validate the idea (what it is, domain knowledge, validation, market selection, the pitch), make the business model real (time, costs, scale, pricing, the model, acquisition, relationships, support), then design (grill, PRD) last. It evaluates each stage at its own altitude, so a one-line idea is never audited for implementation details.
+- **thought-layer-panel.** Pressure-test the answer to one stage with an adversarial panel (red team, domain expert, skeptical investor), at that stage's altitude. Confidence score, letter grade, at most three stage-appropriate fixes; later-stage concerns get parked, not penalized.
+- **thought-layer-grill.** The design phase: a domain-driven discovery interview that turns the validated idea into a glossary plus testable requirements. Runs after the framework, not instead of it.
 - **thought-layer-prd.** Compose a complete, buildable PRD from everything above.
 - **thought-layer-naming.** Name the thing, with rationale and domain-ready slugs.
 
@@ -46,14 +47,15 @@ The skills work as-is; the Pi-specific tools and slash commands are Pi only. Oth
 
 ## How to use it
 
-Run the whole flow with `/tl`, or one stage at a time:
+Run the whole framework with `/tl`. It walks the stages in order and does not skip ahead:
 
-1. `/tl-panel` until the idea clears the bar (aggregate confidence 0.85 or higher) or you decide it is good enough. The panel uses `tl_score` to compute the verdict.
-2. `/tl-grill` to turn it into requirements and a glossary.
-3. `/tl-prd` to compose the buildable spec.
-4. `/tl-naming` whenever you need a name. It uses `tl_domains` to check availability.
+1. **Validate the idea:** what it is, your domain knowledge, validation (will anyone pay), market selection, the 30-second pitch. The panel judges each at the idea's altitude. It will not pressure-test how the thing is built yet.
+2. **Make the model real:** time, costs, scale, pricing, the business model and its numbers (via `tl_project`), acquisition, relationships, support. This is where unit economics and operational logistics get scrutinized.
+3. **Design it (last):** `/tl-grill` runs the discovery interview into requirements; `/tl-prd` composes the buildable spec. Every "how will it actually work" concern parked during validation gets resolved here.
 
-To check domains live, set a RapidAPI key in your environment (`THOUGHT_LAYER_DOMAIN_KEY` or `RAPIDAPI_KEY`). With no key, the naming step links out to a domain search instead of calling out.
+Each stage clears at confidence 0.85 or when you set it aside (open items carry forward as to-dos). You can also run a single stage directly: `/tl-panel`, `/tl-grill`, `/tl-prd`, `/tl-naming`.
+
+To check domains live, set a RapidAPI key in your environment (`THOUGHT_LAYER_DOMAIN_KEY` or `RAPIDAPI_KEY`). With no key, naming links out to a domain search instead of calling out.
 
 The hosted version of the rigor lives at [weareallproductmanagersnow.com](https://weareallproductmanagersnow.com) if you would rather not install anything.
 

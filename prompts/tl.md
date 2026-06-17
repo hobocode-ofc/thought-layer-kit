@@ -1,8 +1,8 @@
-Run the full Thought Layer rigor on the idea below, in order, and do not skip a stage:
+Run the full Thought Layer framework on the idea below. Apply the **thought-layer-framework** skill as the backbone:
 
-1. Apply the **thought-layer-panel** skill until the idea clears the bar (aggregate confidence 0.85 or higher) or I tell you to set it aside. Use the `tl_score` tool to compute the status and grade rather than guessing.
-2. Apply the **thought-layer-grill** skill to turn it into a domain glossary and testable requirements.
-3. Apply the **thought-layer-prd** skill to compose the buildable PRD.
-4. If it needs a name, apply the **thought-layer-naming** skill and use `tl_domains` to check availability.
+- Walk every stage in order: first validate the idea (what it is, domain knowledge, validation, market selection, the 30-second pitch), then make the business model real (time, costs, scale, pricing, the model and its numbers, acquisition, relationships, support).
+- Evaluate each stage with the **thought-layer-panel** skill at that stage's altitude, and use the `tl_score` tool for the verdict. Use `tl_project` for the business-model numbers.
+- Do not jump to the design phase. The Grill and the PRD come last, after the validation and model stages. Any "how will it actually be built" concern gets parked until the Grill, not raised against the early idea.
+- When the framework reaches the design phase, run **thought-layer-grill** then **thought-layer-prd**. Use **thought-layer-naming** (with `tl_domains`) whenever it needs a name.
 
-The idea:
+Take it one stage at a time. The idea:

@@ -1,6 +1,6 @@
 ---
 name: thought-layer-grill
-description: Run a single domain-driven design discovery interview ("the grill") that turns a validated idea into a complete, buildable spec: a domain glossary plus testable requirements across personas, journeys, UX, functional behavior, business rules, data, integrations, non-functional needs, and metrics. Use after an idea has passed the panel and before composing a PRD or writing any code.
+description: Run a single domain-driven design discovery interview ("the grill") that turns a validated idea into a complete, buildable spec: a domain glossary plus testable requirements across personas, journeys, UX, functional behavior, business rules, data, integrations, non-functional needs, and metrics. This is the design phase: run it only after the validation and business-model stages of the framework are worked through, and before the PRD. It is where implementation, UX, data, and edge-case concerns (the ones the early panels parked) get resolved.
 ---
 
 # The Grill: a domain-driven discovery interview

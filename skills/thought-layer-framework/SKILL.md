@@ -1,6 +1,6 @@
 ---
 name: thought-layer-framework
-description: Walk a founder through the full Thought Layer validation framework in order, one stage at a time, evaluating each stage with the panel at that stage's altitude, and only reaching design (the PRD draft, then the grill) at the end. Use this to run the whole rigor on an idea. It is the backbone; the panel, grill, prd, and naming skills are the stages it orchestrates.
+description: "Walk a founder through the full Thought Layer validation framework in order, one stage at a time, evaluating each stage with the panel at that stage's altitude, and only reaching design (the PRD draft, then the grill) at the end. Use this to run the whole rigor on an idea. It is the backbone; the panel, grill, prd, and naming skills are the stages it orchestrates."
 ---
 
 # The Thought Layer framework

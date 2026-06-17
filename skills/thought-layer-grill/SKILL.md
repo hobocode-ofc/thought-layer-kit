@@ -1,6 +1,6 @@
 ---
 name: thought-layer-grill
-description: Run a single domain-driven grilling session ("the grill") that takes the draft PRD and hardens it into a build-ready spec — sharpen the domain glossary, surface contradictions and missing requirements across personas, journeys, UX, functional behavior, business rules, data, integrations, non-functional needs, and metrics, and update the PRD inline. This is the LAST design step: run it after the thought-layer-prd skill has drafted the PRD, once the validation and business-model stages of the framework are worked through.
+description: "Run a single domain-driven grilling session (\"the grill\") that takes the draft PRD and hardens it into a build-ready spec — sharpen the domain glossary, surface contradictions and missing requirements across personas, journeys, UX, functional behavior, business rules, data, integrations, non-functional needs, and metrics, and update the PRD inline. This is the LAST design step: run it after the thought-layer-prd skill has drafted the PRD, once the validation and business-model stages of the framework are worked through."
 ---
 
 # The Grill: grilling the draft PRD

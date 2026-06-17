@@ -1,6 +1,6 @@
 ---
 name: thought-layer-prd
-description: Compose a complete, professional first-draft PRD from the validated idea and the business model — including a first-cut domain glossary and testable requirements — sufficient for an AI coding agent to build from. Use as the FIRST design step, before the grill, which then stress-tests and hardens it.
+description: "Compose a complete, professional first-draft PRD from the validated idea and the business model — including a first-cut domain glossary and testable requirements — sufficient for an AI coding agent to build from. Use as the FIRST design step, before the grill, which then stress-tests and hardens it."
 ---
 
 # Compose the PRD (the draft)

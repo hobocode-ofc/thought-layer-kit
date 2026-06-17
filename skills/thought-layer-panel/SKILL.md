@@ -1,6 +1,6 @@
 ---
 name: thought-layer-panel
-description: Pressure-test the answer to ONE framework stage with an adversarial panel (red team, domain expert, skeptical investor), at that stage's altitude. Returns a confidence score, a letter grade, and at most three material fixes that belong to this stage, looping until confidence passes 0.85 or the user sets it aside. Use to judge whether a single stage's answer is good enough to move on. It evaluates one stage, not the whole business.
+description: "Pressure-test the answer to ONE framework stage with an adversarial panel (red team, domain expert, skeptical investor), at that stage's altitude. Returns a confidence score, a letter grade, and at most three material fixes that belong to this stage, looping until confidence passes 0.85 or the user sets it aside. Use to judge whether a single stage's answer is good enough to move on. It evaluates one stage, not the whole business."
 ---
 
 # The Thought Layer Panel

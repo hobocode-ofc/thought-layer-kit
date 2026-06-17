@@ -1,6 +1,6 @@
 ---
 name: thought-layer-naming
-description: Propose distinct, memorable company or product names grounded in the specific business, its audience, and its personality, each with a rationale, a naming style, and a domain-ready slug. Use when a project needs a name, or to sanity-check an existing one before committing.
+description: "Propose distinct, memorable company or product names grounded in the specific business, its audience, and its personality, each with a rationale, a naming style, and a domain-ready slug. Use when a project needs a name, or to sanity-check an existing one before committing."
 ---
 
 # Name it

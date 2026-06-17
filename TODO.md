@@ -9,9 +9,11 @@ Things only you can do. Claude keeps adding to this as it builds; you check them
 
 ## npm + distribution
 - [x] Package prepped for publish (2026-06-17): `publishConfig.access=public` added; `files` narrowed so `core/*.test.ts` don't ship; tsc clean, 33 tests pass, `npm pack --dry-run` = 22 files / 45.4 kB.
-- [ ] `npm login` (your account; first publish). Then check your scope: if `npm whoami` is NOT `hobocode`, create a FREE npm org named `hobocode` (npmjs.com -> Add Organization -> free tier for public packages) so the `@hobocode` scope is yours.
-- [ ] Publish from the repo root: `npm publish` (publishConfig already forces public; add `--otp=123456` if you have 2FA). Then verify: `npm view @hobocode/thought-layer` and `pi install npm:@hobocode/thought-layer`.
-- [ ] List the package in Pi's `/packages` marketplace once published.
+- [x] `npm login` done; `npm whoami` = `hobocode`, so the scope is the username (no org needed).
+- [x] **PUBLISHED `@hobocode/thought-layer@0.1.0` (2026-06-17, public).** Done via `npm publish` in your own terminal (passkey 2FA needs the browser; a non-interactive shell can't, so Claude can't publish for you without an Automation token). Verified live: registry 200, `npm view` shows 0.1.0.
+- [ ] Test it from npm in Pi: `pi install npm:@hobocode/thought-layer`, then RESTART Pi, confirm `/tl` + skills load.
+- [ ] List the package in Pi's `/packages` marketplace.
+- [ ] Next release: bump the version first (`npm version patch`) — npm refuses to overwrite a published version.
 
 ## Testing in real environments
 - [x] Skills load in Claude Code (`cp -r skills/* ~/.claude/skills/`): verified, they appear and load.

@@ -12,9 +12,9 @@ Things only you can do. Claude keeps adding to this as it builds; you check them
 - [ ] List the package in Pi's `/packages` marketplace once published.
 
 ## Testing in real environments
-- [x] Skills load in Claude Code (`cp -r skills/* ~/.claude/skills/`) — verified, they appear and load.
-- [x] `pi install git:...` from the published source — verified, including the production dependency install (`@sinclair/typebox` pulled, the ship-blocker fix confirmed on the real path).
-- [x] Extension loads + `tl_score` / `tl_domains` / `tl_project` register and return exact outputs — verified by a deterministic test (`extensions/thought-layer.test.ts`), and the `.d.ts` load error is fixed (shim moved to `types/`).
+- [x] Skills load in Claude Code (`cp -r skills/* ~/.claude/skills/`): verified, they appear and load.
+- [x] `pi install git:...` from the published source: verified, including the production dependency install (`@sinclair/typebox` pulled, the ship-blocker fix confirmed on the real path).
+- [x] Extension loads + `tl_score` / `tl_domains` / `tl_project` register and return exact outputs: verified by a deterministic test (`extensions/thought-layer.test.ts`), and the `.d.ts` load error is fixed (shim moved to `types/`).
 - [ ] **Your last interactive check** (needs your Pi session + model key): run `pi`, type `/` to confirm `/tl`, `/tl-panel`, `/tl-grill`, `/tl-prd`, `/tl-naming` appear, ask the agent to use the tools (expect 65%/yellow/D and $1,050/$300/month 1), and run `/tl-panel` on a real idea. Confirm Pi appends your text after the command (if it expects `{{var}}` substitution instead, tell me and I will add placeholders).
 
 ## Phase 4 prep (deploy)

@@ -69,6 +69,7 @@ The hosted version of the rigor lives at [weareallproductmanagersnow.com](https:
 
 - The deterministic engine in `core/` is TypeScript, with `vitest` tests (`npm test`) and a strict `tsc --noEmit` typecheck. It is the single source of truth for scoring, domain checks, and the projection model.
 - This is a TypeScript-source package: relative imports carry `.ts` extensions so Pi's loader and Vite resolve them directly. It is meant to be consumed by TS-aware tooling, not a plain Node `require`.
+- **Iterating on skills in Pi:** `pi update` syncs files to disk but a running Pi session keeps the skill registry it built at startup — it does not hot-reload. After adding or editing a skill or prompt, **restart Pi** (or run `/reload` if your build supports it) to pick up the change. Symptom of a stale session: a newly added skill is missing from the picker, or a skill shows an outdated description.
 
 ## Acknowledgments
 

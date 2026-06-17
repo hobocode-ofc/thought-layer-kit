@@ -43,3 +43,7 @@ Maintain two living artifacts:
 - **Requirements:** id, category, and a testable requirement statement.
 
 When the interview is complete, hand both artifacts to the PRD step.
+
+## Credit
+
+The "grill" — a relentless, one-question-at-a-time interview that sharpens the domain glossary and surfaces contradictions as it goes — is inspired by Matt Pocock's [`grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/engineering/grill-with-docs/SKILL.md) skill (MIT, © Matt Pocock). His grills an architecture plan against the existing domain model and docs; this skill adapts the same technique into a product-discovery interview that produces a domain glossary plus testable requirements. Thank you, Matt.

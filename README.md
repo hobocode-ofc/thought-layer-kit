@@ -70,6 +70,10 @@ The hosted version of the rigor lives at [weareallproductmanagersnow.com](https:
 - The deterministic engine in `core/` is TypeScript, with `vitest` tests (`npm test`) and a strict `tsc --noEmit` typecheck. It is the single source of truth for scoring, domain checks, and the projection model.
 - This is a TypeScript-source package: relative imports carry `.ts` extensions so Pi's loader and Vite resolve them directly. It is meant to be consumed by TS-aware tooling, not a plain Node `require`.
 
+## Acknowledgments
+
+The Grill skill's interview technique — relentless, one question at a time, sharpening the domain glossary as it goes — is inspired by Matt Pocock's [`grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/engineering/grill-with-docs/SKILL.md) (MIT, © Matt Pocock). His grills an architecture plan against existing domain docs; this kit adapts the technique into product discovery that yields a glossary plus testable requirements.
+
 ## License
 
 MIT. Copyright Hobocode LLC.

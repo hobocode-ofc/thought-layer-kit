@@ -13,6 +13,6 @@
     "verbatimModuleSyntax": true,
     "types": ["node"]
   },
-  "include": ["core", "extensions"],
+  "include": ["core", "extensions", "types"],
   "exclude": ["node_modules", "dist"]
 }

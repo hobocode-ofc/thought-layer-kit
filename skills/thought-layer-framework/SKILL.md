@@ -1,6 +1,6 @@
 ---
 name: thought-layer-framework
-description: Walk a founder through the full Thought Layer validation framework in order, one stage at a time, evaluating each stage with the panel at that stage's altitude, and only reaching design (the grill and PRD) at the end. Use this to run the whole rigor on an idea. It is the backbone; the panel, grill, prd, and naming skills are the stages it orchestrates.
+description: Walk a founder through the full Thought Layer validation framework in order, one stage at a time, evaluating each stage with the panel at that stage's altitude, and only reaching design (the PRD draft, then the grill) at the end. Use this to run the whole rigor on an idea. It is the backbone; the panel, grill, prd, and naming skills are the stages it orchestrates.
 ---
 
 # The Thought Layer framework
@@ -45,10 +45,10 @@ Altitude: does the economic machine work? This is where unit economics, CAC, mon
 
 ## Part 3: Design it (only now)
 
-This is where "how will it actually be built" gets answered. Every implementation, UX, data, and edge-case concern parked during validation gets resolved here.
+This is where "how will it actually be built" gets answered. Every implementation, UX, data, and edge-case concern parked during validation gets resolved here. Draft the spec first, then grill it.
 
-14. **The Grill.** Run the **thought-layer-grill** skill: the domain-driven discovery interview that turns the validated idea into a glossary plus testable requirements.
-15. **The PRD.** Run the **thought-layer-prd** skill: compose the complete, buildable spec from everything above.
+14. **The PRD (draft).** Run the **thought-layer-prd** skill: compose a complete first-draft PRD — including a first-cut domain glossary and testable requirements — from the validated idea and the business model above.
+15. **The Grill.** Run the **thought-layer-grill** skill: grill that draft PRD. Challenge it against the domain one question at a time, sharpen the glossary, surface contradictions, unstated rules, and edge cases, and update the PRD inline until it is build-ready.
 
 ## Supporting passes (run when relevant)
 

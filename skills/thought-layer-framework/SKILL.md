@@ -9,14 +9,16 @@ Compression theory: AI made building cheap, so value moved to the layer it did n
 
 ## How to run it
 
-Walk the stages below **in order, one at a time**. For each stage:
+**Start by asking for the idea.** Do not expect it handed to you at invocation. If the user has not given it yet, open with the first stage's question ("What is this? One sentence: a thing that does what, for whom") and wait for their answer. If they paste a fuller description, treat it as their answer to stage 1 (the Concise What) and evaluate that — but do not let a rich paragraph tempt you to skip ahead. A detailed idea still owes you every later stage.
 
-1. Ask the user the stage's question. If they are stuck, offer the example as a model answer, not as the truth.
+Then walk the stages below **in order, one stage per turn**. For each stage:
+
+1. Ask the stage's question. If the user already addressed it in earlier input, draft their answer back to them in a line and ask them to confirm or sharpen it rather than re-asking from scratch. If they are stuck, offer the example as a model answer, not as the truth.
 2. Evaluate their answer with the **thought-layer-panel** skill, at this stage's altitude, and use the `tl_score` tool for the verdict.
 3. The stage is done when aggregate confidence reaches 0.85, or when the user says to set it aside (carry the unresolved suggestions forward as to-dos).
-4. Move to the next stage. Keep prior answers as context for coherence, but never lower an early stage's grade for a concern that belongs to a later stage. Park such concerns for the stage that owns them.
+4. Advance **exactly one** stage, ask that stage's question, and **stop for the user's answer.** Never batch stages, never answer them on the user's behalf, and never skip from an early stage to the design phase. Keep prior answers as context for coherence, but never lower an early stage's grade for a concern that belongs to a later stage. Park such concerns for the stage that owns them.
 
-Do not start the Grill or the PRD until the validation and model stages are worked through. Those are the design phase and they come last.
+Reaching the Grill or the PRD before all of Part 1 (validate the idea) and Part 2 (the business model) are worked through is the signature failure of this framework. Do not do it. The Grill and the PRD are the design phase and they come last.
 
 ## Part 1: Validate the idea
 

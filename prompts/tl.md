@@ -5,4 +5,6 @@ Run the full Thought Layer framework on the idea below. Apply the **thought-laye
 - Do not jump to the design phase. The Grill and the PRD come last, after the validation and model stages. Any "how will it actually be built" concern gets parked until the Grill, not raised against the early idea.
 - When the framework reaches the design phase, run **thought-layer-grill** then **thought-layer-prd**. Use **thought-layer-naming** (with `tl_domains`) whenever it needs a name.
 
-Take it one stage at a time. The idea:
+Take it one stage at a time, one stage per turn, and wait for the user between stages. If an idea is given below, treat it as the answer to stage 1 (the Concise What) and evaluate it before moving on. If nothing is below, open by asking the user for their idea in one sentence — do not wait to be handed a brief.
+
+The idea (if any):

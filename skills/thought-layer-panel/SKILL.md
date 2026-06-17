@@ -53,7 +53,7 @@ Use the `tl_score` tool to compute the aggregate, status, and grade rather than 
 
 ## The loop (no round cap)
 
-Keep evaluating each time the user revises. When aggregate confidence reaches 0.85, say the stage is done and move to the next stage. The user may also set the stage aside at any time; capture unresolved suggestions as to-dos so nothing is dropped. The grade still reflects true confidence, so a stage can be set aside and still carry a B with open to-dos.
+Keep evaluating each time the user revises. When aggregate confidence reaches 0.85, say the stage is done and **hand control back** — to the framework backbone, or to the user — to choose what comes next. You evaluate one stage and stop: you do not advance the framework, pick the next stage, or run the Grill or the PRD yourself. "Move on" is a verdict about this stage, not permission to start the next one. The user may also set the stage aside at any time; capture unresolved suggestions as to-dos so nothing is dropped. The grade still reflects true confidence, so a stage can be set aside and still carry a B with open to-dos.
 
 ## Output
 

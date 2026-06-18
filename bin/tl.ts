@@ -90,6 +90,10 @@ function buildOp(args: string[], flags: Record<string, string | boolean>): State
 
 function main(): void {
   const { args, flags } = parseArgs(process.argv.slice(2));
+  // `npx @hobocode/thought-layer tl <op>` makes npx run the package-named bin
+  // and pass "tl" as the first ARG. Drop a leading bin-name token so every
+  // invocation form (npx with or without `tl`, or a global `tl`) resolves the op.
+  if (args[0] === "tl" || args[0] === "thought-layer") args.shift();
   if (flags["help"] || args.length === 0) { console.log(HELP); process.exit(0); }
   let payload: StateOp;
   try { payload = buildOp(args, flags); }

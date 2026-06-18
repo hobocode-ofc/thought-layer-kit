@@ -24,9 +24,10 @@
 import { readFileSync } from "node:fs";
 import { applyStateOp, type StateOp } from "../core/state-ops.ts";
 
-const HELP = `tl - read/write the portable Thought Layer state file (.thought-layer/state.json)
+const HELP = `tl - read/write a portable Thought Layer state file (default: .thought-layer/state.json)
 
   tl read [path] [--json]            where the run stands
+  tl list [dir]                      list the state files under .thought-layer/ (juggle several ideas)
   tl export [path]                   handoff check
   tl answer <qId> <value> [path]     record an answer
   tl feedback --data '<json>'        record a panel verdict ({qId,mode,personas,endState,round})
@@ -34,6 +35,9 @@ const HELP = `tl - read/write the portable Thought Layer state file (.thought-la
   tl cursor --data '<json>'          save the resume cursor object
   tl park <key> <note> [path]        stash a panel note
   tl exec --data '<json>'            run a full {op,...} payload
+
+Selecting a file: pass --path <file>.json (or a positional path) to any op, keep several
+ideas as .thought-layer/<name>.json, or set THOUGHT_LAYER_STATE once as the session default.
 
   --path <p>  project dir or .json path   --data <j>  JSON payload ("-" = stdin)
   --json      print details JSON          -h, --help`;
@@ -70,6 +74,8 @@ function buildOp(args: string[], flags: Record<string, string | boolean>): State
   switch (op) {
     case "read":
     case "export":
+      return { op, path: path ?? args[1] };
+    case "list":
       return { op, path: path ?? args[1] };
     case "answer":
       return { op, qId: args[1], value: args[2], path: path ?? args[3] };

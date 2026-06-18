@@ -24,9 +24,11 @@ Reaching the Grill or the PRD before all of Part 1 (validate the idea) and Part 
 
 No one finishes this in one sitting. The work lives in a portable file, `.thought-layer/state.json`, in the project directory. It is your memory across turns and sessions, and it is the SAME interop file the web app reads, so a founder can answer some stages here and hand the file to a co-founder who continues in the web app (weareallproductmanagersnow.com, "Load progress from file"), back and forth, losslessly. Never hand-write this JSON: use the tool below, which builds the exact shapes the web app expects.
 
-**The tool.** If the `tl_state` tool is available (Pi), use it. Otherwise run the CLI from any shell: `npx -y @hobocode/thought-layer tl <op> ...` (or just `tl ...` if the package is installed). Ops: `read`, `answer`, `feedback`, `artifact`, `cursor`, `park`, `export`.
+**The tool.** If the `tl_state` tool is available (Pi), use it. Otherwise run the CLI from any shell: `npx -y @hobocode/thought-layer tl <op> ...` (or just `tl ...` if the package is installed). Ops: `read`, `list`, `answer`, `feedback`, `artifact`, `cursor`, `park`, `export`.
 
-**On start, ALWAYS read first.** `tl_state read` (or `tl read`). If a file exists, summarize where the run stands and **resume from the saved cursor** - do not restart at stage 1. If not, start fresh; the file is created on first write.
+**Choosing the file.** The default is `.thought-layer/state.json`. To keep several ideas side by side, give each its own file and use the SAME path for every op in the session: pass `--path .thought-layer/<name>.json` (or the tool's `path`), or set `THOUGHT_LAYER_STATE` once as the session default. `list` shows the files already there.
+
+**On start, ALWAYS read first.** `tl_state read` (or `tl read`). If a file exists, summarize where the run stands and **resume from the saved cursor** - do not restart at stage 1. If not, start fresh; the file is created on first write. If `list` shows more than one state file, ask which idea to resume (or to start a new one) before reading, and stick to that path for the rest of the session.
 
 **After each stage:**
 1. Record the answer against its question id: `tl_state` op `answer` (or `tl answer <qId> "<value>"`).

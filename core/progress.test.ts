@@ -6,7 +6,7 @@ import {
   PROGRESS_FORMAT, parseProgress, buildProgress, serializeProgress, emptyState,
   buildFeedbackEntry, normalizeRequirements, setAnswer, setFeedbackEntry, setArtifact, setCursor, parkNote,
 } from "./progress.ts";
-import { loadStateFile, saveStateFile } from "./state-file.ts";
+import { loadStateFile, saveStateFile, listStateFiles, resolveStatePath, STATE_ENV } from "./state-file.ts";
 
 const writer = { kind: "kit" as const, version: "test", ts: 123 };
 const roundTrip = (state: Record<string, unknown>) =>
@@ -152,5 +152,34 @@ describe("state file IO", () => {
     expect(reloaded.exists).toBe(true);
     expect((reloaded.state.answers as Record<string, string>)["what-statement"]).toBe("a scheduling tool");
     expect(reloaded.path).toBe(join(dir, ".thought-layer", "state.json"));
+  });
+});
+
+describe("named files, env default, and list", () => {
+  it("an explicit target wins; the env var is the session fallback; else the default", () => {
+    const prev = process.env[STATE_ENV];
+    try {
+      delete process.env[STATE_ENV];
+      expect(resolveStatePath(undefined, "/proj")).toBe(join("/proj", ".thought-layer", "state.json"));
+      process.env[STATE_ENV] = "/tmp/x/custom.json";
+      expect(resolveStatePath(undefined, "/proj")).toBe("/tmp/x/custom.json");
+      // an explicit path still overrides the env default
+      expect(resolveStatePath(".thought-layer/acme.json", "/proj")).toBe(join("/proj", ".thought-layer", "acme.json"));
+    } finally {
+      if (prev === undefined) delete process.env[STATE_ENV];
+      else process.env[STATE_ENV] = prev;
+    }
+  });
+
+  it("keeps several ideas as separate files and lists them", () => {
+    const dir = mkdtempSync(join(tmpdir(), "tl-multi-"));
+    const stamp = { ts: 1, exportedAt: "2026-06-17T00:00:00Z" };
+    saveStateFile(setAnswer(emptyState(), "what-statement", "idea A", 1), { target: join(dir, ".thought-layer", "acme.json"), ...stamp });
+    saveStateFile(setAnswer(emptyState(), "what-statement", "idea B", 1), { target: join(dir, ".thought-layer", "bravo.json"), ...stamp });
+
+    expect(listStateFiles(dir).map((f) => f.name)).toEqual(["acme.json", "bravo.json"]);
+    // the files are independent
+    expect((loadStateFile(join(dir, ".thought-layer", "acme.json")).state.answers as Record<string, string>)["what-statement"]).toBe("idea A");
+    expect((loadStateFile(join(dir, ".thought-layer", "bravo.json")).state.answers as Record<string, string>)["what-statement"]).toBe("idea B");
   });
 });

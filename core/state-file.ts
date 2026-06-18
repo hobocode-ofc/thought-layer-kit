@@ -3,7 +3,7 @@
 // tl_state tool and the CLI bin. Kept out of progress.ts so the transforms stay
 // testable without touching disk.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import {
   parseProgress, buildProgress, serializeProgress, emptyState,
@@ -12,13 +12,33 @@ import {
 
 export const STATE_DIR = ".thought-layer";
 export const STATE_FILE = "state.json";
+// Set THOUGHT_LAYER_STATE to a file path to make it the session default, so the
+// agent or user does not have to pass --path on every op when juggling several
+// ideas. Precedence: an explicit target (--path / the tool's `path`) wins, then
+// the env var, then <cwd>/.thought-layer/state.json.
+export const STATE_ENV = "THOUGHT_LAYER_STATE";
+
+const withEnv = (target?: string): string | undefined => target ?? (process.env[STATE_ENV] || undefined);
 
 // Resolve the canonical state file path. `target` may be a project directory or
-// a direct path to a .json file; defaults to <cwd>/.thought-layer/state.json.
+// a direct path to a .json file; with neither, falls back to the env default or
+// <cwd>/.thought-layer/state.json.
 export function resolveStatePath(target?: string, cwd: string = process.cwd()): string {
-  if (!target) return join(cwd, STATE_DIR, STATE_FILE);
-  const abs = isAbsolute(target) ? target : resolve(cwd, target);
+  const t = withEnv(target);
+  if (!t) return join(cwd, STATE_DIR, STATE_FILE);
+  const abs = isAbsolute(t) ? t : resolve(cwd, t);
   return abs.endsWith(".json") ? abs : join(abs, STATE_DIR, STATE_FILE);
+}
+
+// List the state files under <dir>/.thought-layer/ so several ideas can live
+// side by side and be discovered. `dir` is a project directory (defaults to cwd).
+export function listStateFiles(dir: string = process.cwd()): Array<{ name: string; path: string }> {
+  const d = join(dir, STATE_DIR);
+  if (!existsSync(d)) return [];
+  return readdirSync(d)
+    .filter((f) => f.endsWith(".json"))
+    .sort()
+    .map((name) => ({ name, path: join(d, name) }));
 }
 
 export interface LoadResult {

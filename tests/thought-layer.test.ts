@@ -113,4 +113,14 @@ describe("tl_state tool (end to end against a temp file)", () => {
     const r = await tools.tl_state!.execute("t", { op: "answer", path: dir, qId: "prd-grill", value: "nope" });
     expect(r.content[0]!.text).toMatch(/tl_state error|not an answerable/);
   });
+
+  it("keeps several ideas as separate named files and lists them", async () => {
+    const proj = mkdtempSync(join(tmpdir(), "tl-multi-"));
+    await tools.tl_state!.execute("t", { op: "answer", path: join(proj, ".thought-layer", "acme.json"), qId: "what-statement", value: "dog grooming scheduler" });
+    await tools.tl_state!.execute("t", { op: "answer", path: join(proj, ".thought-layer", "bravo.json"), qId: "what-statement", value: "HVAC dispatch" });
+    const r = await tools.tl_state!.execute("t", { op: "list", path: proj });
+    const files = (r.details!.files as Array<{ name: string }>).map((f) => f.name).sort();
+    expect(files).toEqual(["acme.json", "bravo.json"]);
+    expect(r.content[0]!.text).toContain("2 state file");
+  });
 });

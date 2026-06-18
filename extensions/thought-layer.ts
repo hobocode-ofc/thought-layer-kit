@@ -148,16 +148,16 @@ export default function (pi: ExtensionAPI) {
     name: "tl_state",
     label: "Thought Layer: state",
     description:
-      "Read, update, and write the portable Thought Layer progress file (.thought-layer/state.json) shared with the web app so work passes losslessly between a founder in the browser and an agent. " +
-      "ops: 'read' (resume: where the run stands), 'answer' (record a question answer), 'feedback' (record a panel verdict - pass it the per-persona prose + confidences and it builds the exact entry), " +
+      "Read, update, and write a portable Thought Layer progress file (default .thought-layer/state.json) shared with the web app so work passes losslessly between a founder in the browser and an agent. " +
+      "ops: 'read' (resume: where the run stands), 'list' (list the state files under .thought-layer/ when juggling several ideas), 'answer' (record a question answer), 'feedback' (record a panel verdict - pass it the per-persona prose + confidences and it builds the exact entry), " +
       "'artifact' (store prd/grill/bizModel/naming/brand/etc., requirements auto-normalized), 'cursor' (save resume position), 'park' (stash a panel note with no web-app question), 'export' (report the current file for handoff). " +
-      "Always use this instead of writing the JSON by hand.",
+      "To juggle several ideas, give each its own file via `path` (e.g. .thought-layer/acme.json) and use the same path for every op in the session. Always use this instead of writing the JSON by hand.",
     parameters: Type.Object({
       op: Type.Union([
-        Type.Literal("read"), Type.Literal("answer"), Type.Literal("feedback"),
+        Type.Literal("read"), Type.Literal("list"), Type.Literal("answer"), Type.Literal("feedback"),
         Type.Literal("artifact"), Type.Literal("cursor"), Type.Literal("park"), Type.Literal("export"),
       ], { description: "The operation to perform." }),
-      path: Type.Optional(Type.String({ description: "Project dir or .json path. Defaults to ./.thought-layer/state.json in the cwd." })),
+      path: Type.Optional(Type.String({ description: "Project dir or .json path; selects WHICH state file to use. Defaults to ./.thought-layer/state.json. Use a named file (e.g. .thought-layer/acme.json) to keep ideas separate; for 'list', a project dir to scan." })),
       qId: Type.Optional(Type.String({ description: "Question id (for 'answer'/'feedback'). Must be a real Thought Layer question id." })),
       value: Type.Optional(Type.Unknown({ description: "For 'answer': the answer string. For 'artifact': the artifact object." })),
       artifact: Type.Optional(Type.String({ description: "For 'artifact': one of bizModel, grill, assets, research, swot, prd, naming, brand." })),

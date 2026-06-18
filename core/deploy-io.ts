@@ -15,13 +15,14 @@
 //               handshake; we use the vendor tool when it is installed.
 
 import { spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { resolveStatePath } from "./state-file.ts";
 import type { BuildManifest } from "./scaffold.ts";
 import type { StateOpResult } from "./state-ops.ts";
 import {
-  buildFileDigests, uploadPath, sanitizeSiteName, parseAnonymousOutput, deployRecord,
+  buildFileDigests, uploadPath, sanitizeSiteName, parseCliDeployOutput, deployRecord,
   type FileMap, type DeployRecord,
 } from "./deploy.ts";
 
@@ -166,7 +167,7 @@ async function digestDeploy(
   return { url: siteUrl, adminUrl, siteId: String(siteId), deployId, uploaded, state: state || "uploaded" };
 }
 
-// ---- the anonymous path: delegate to the Netlify CLI -------------------------
+// ---- the no-env-token path: delegate to the Netlify CLI ----------------------
 
 export function hasNetlifyCli(): boolean {
   try {
@@ -189,17 +190,55 @@ export function cliSupportsAnonymous(): boolean {
   }
 }
 
-function anonymousDeploy(publishDirAbs: string): { url: string | null; claimUrl: string | null; raw: string } {
-  const r = spawnSync(
-    "netlify",
-    ["deploy", "--dir", publishDirAbs, "--prod", "--allow-anonymous"],
-    { encoding: "utf8", timeout: 180000 },
-  );
+// Is the CLI logged in via its OWN stored config (independent of our env)? This
+// matters because --allow-anonymous is a no-op when logged in, and a plain
+// deploy then needs a target site - so a logged-in CLI must create a site in the
+// user's account instead. getCurrentUser exits 0 with JSON when logged in.
+export function cliLoggedIn(): boolean {
+  try {
+    const r = spawnSync("netlify", ["api", "getCurrentUser", "--data", "{}"], { encoding: "utf8", timeout: 20000 });
+    return r.status === 0 && (r.stdout || "").trim().startsWith("{");
+  } catch {
+    return false;
+  }
+}
+
+export interface CliDeployResult {
+  url: string | null;
+  claimUrl: string | null;
+  owned: boolean;
+  siteName: string | null;
+  raw: string;
+}
+
+// Deploy via the Netlify CLI, picking flags from the CLI's own login state:
+//   logged in  -> create (or, with siteId, reuse) a site in the user's account,
+//                 owned immediately, no claim step.
+//   logged out -> an anonymous, claimable site (one-hour window).
+// --no-build forces a plain publish of our already-built static dir (no
+// framework detection / build step). The caller has decided the CLI path is
+// wanted and that the CLI exists + supports what is needed.
+function cliDeploy(publishDirAbs: string, opts: { siteName?: string; siteId?: string }, loggedIn: boolean): CliDeployResult {
+  const base = ["deploy", "--dir", publishDirAbs, "--prod", "--no-build"];
+  let args: string[];
+  let siteName: string | null = null;
+  if (loggedIn) {
+    if (opts.siteId) args = [...base, "--site", opts.siteId];
+    else {
+      siteName = sanitizeSiteName(opts.siteName || "") || `thought-layer-${randomBytes(4).toString("hex")}`;
+      args = [...base, "--create-site", siteName];
+    }
+  } else {
+    args = [...base, "--allow-anonymous"];
+  }
+  const r = spawnSync("netlify", args, { encoding: "utf8", timeout: 180000 });
   const raw = `${r.stdout || ""}\n${r.stderr || ""}`.trim();
   if (r.status !== 0) {
-    throw new Error(`netlify deploy --allow-anonymous failed (exit ${r.status}). Output:\n${raw.slice(0, 800)}`);
+    throw new Error(`netlify ${args.join(" ")} failed (exit ${r.status}). Output:\n${raw.slice(0, 800)}`);
   }
-  return { ...parseAnonymousOutput(raw), raw };
+  const parsed = parseCliDeployOutput(raw);
+  // A claim link only applies to the anonymous (logged-out) site.
+  return { url: parsed.url, claimUrl: loggedIn ? null : parsed.claimUrl, owned: loggedIn, siteName, raw };
 }
 
 // ---- the orchestrator (mirrors runScaffold's result shape) -------------------
@@ -239,58 +278,67 @@ export async function runDeploy(opts: DeployRunOptions, ctx: { deployedAt: strin
       ok: true,
       message:
         `Dry run: would deploy ${fileCount} files from ${publishDirAbs} (entry ${manifest.entry}) to Netlify ` +
-        `via the ${opts.anonymous ? "anonymous CLI" : token ? "BYO-token digest" : "(no token set - would use the anonymous CLI or guide you)"} path.${backendWarn}`,
+        `via the ${token && !opts.anonymous ? "BYO-token digest" : "Netlify CLI (logged in -> a site in your account; logged out -> an anonymous claimable site)"} path.${backendWarn}`,
       details: { dryRun: true, publishDir: publishDirAbs, entry: manifest.entry, fileCount, files: Object.keys(digests), hasBackend: manifest.hasBackend },
     };
   }
 
-  // --- anonymous path: explicit, or the fallback when no token is set ---
-  const wantAnonymous = opts.anonymous || !token;
-  if (wantAnonymous) {
-    // The three honest ways to go live, shown whenever we cannot run anonymous.
+  // --- CLI path: explicit (--anonymous), or the fallback when no env token ---
+  const wantCli = opts.anonymous || !token;
+  if (wantCli) {
+    // The three honest ways to go live, shown whenever the CLI path cannot run.
     const guide = (lead: string, needs: string): StateOpResult => ({
       ok: false,
       message:
         lead +
         `To go live, choose one:\n` +
         `  1. BYO token (deploys into your own account, owned immediately): set NETLIFY_AUTH_TOKEN and re-run.\n` +
-        `  2. No account: a current Netlify CLI (\`npm i -g netlify-cli@latest\`) then re-run - uses netlify deploy --allow-anonymous for a 1-hour claimable URL.\n` +
+        `  2. Netlify CLI (\`npm i -g netlify-cli@latest\`) then re-run - logged in it creates a site in your account; logged out it deploys anonymously with a one-hour claim link.\n` +
         `  3. Manual: drag ${publishDirAbs} onto https://app.netlify.com/drop.`,
       details: { publishDir: publishDirAbs, needs },
     });
     if (!hasNetlifyCli()) {
       return guide(
         opts.anonymous
-          ? "Anonymous deploy needs the Netlify CLI, which is not installed. "
+          ? "A CLI deploy needs the Netlify CLI, which is not installed. "
           : "No NETLIFY_AUTH_TOKEN is set and the Netlify CLI is not installed. ",
         "token-or-cli",
       );
     }
-    if (!cliSupportsAnonymous()) {
+    const loggedIn = cliLoggedIn();
+    if (!loggedIn && !cliSupportsAnonymous()) {
       return guide(
-        "Your Netlify CLI is too old for --allow-anonymous (it shipped 2026-03). ",
-        "newer-cli-or-token",
+        "You are not logged into the Netlify CLI and it is too old for --allow-anonymous (that shipped 2026-03). ",
+        "newer-cli-or-login-or-token",
       );
     }
     try {
-      const { url, claimUrl, raw } = anonymousDeploy(publishDirAbs);
+      const { url, claimUrl, owned, siteName, raw } = cliDeploy(publishDirAbs, { siteName: opts.siteName, siteId: opts.siteId }, loggedIn);
       const recPath = writeRecord(
         deployRecord({
-          deployedAt: ctx.deployedAt, mode: "anonymous", publishDir: manifest.publishDir, fileCount,
+          deployedAt: ctx.deployedAt, mode: owned ? "cli" : "anonymous", publishDir: manifest.publishDir, fileCount,
           url, adminUrl: null, claimUrl, siteId: null, deployId: null,
           hasBackend: manifest.hasBackend, backendNote: manifest.backendNote, buildProducer: manifest.producer, stateFile,
         }),
       );
+      // If anonymity was explicitly asked for but the CLI is logged in, it went
+      // to the account instead - say so rather than implying it was anonymous.
+      const anonNote = opts.anonymous && owned
+        ? `\n(Note: you asked for an anonymous deploy, but the Netlify CLI is logged in, so this went to your account. Run \`netlify logout\` first for a truly anonymous, claimable deploy.)`
+        : "";
       return {
         ok: true,
-        message:
-          `Deployed anonymously.${url ? ` Live: ${url}` : ""}${claimUrl ? `\nClaim it within 1 hour (transfers ownership to your account): ${claimUrl}` : ""}` +
-          `\nRecorded ${recPath}.${backendWarn}` +
-          (!url || !claimUrl ? `\n(Could not parse a URL from the CLI output - see details.raw.)` : ""),
-        details: { mode: "anonymous", url, claimUrl, fileCount, raw },
+        message: owned
+          ? `Deployed to your Netlify account via the CLI${siteName ? ` (new site ${siteName})` : ""}.${url ? ` Live: ${url}` : ""}` +
+            `\nIt is owned by your account - no claim needed.\nRecorded ${recPath}.${anonNote}${backendWarn}` +
+            (!url ? `\n(Could not parse a URL from the CLI output - see details.raw.)` : "")
+          : `Deployed anonymously.${url ? ` Live: ${url}` : ""}${claimUrl ? `\nClaim it within 1 hour (transfers ownership to your account): ${claimUrl}` : ""}` +
+            `\nRecorded ${recPath}.${backendWarn}` +
+            (!url || !claimUrl ? `\n(Could not parse a URL/claim link from the CLI output - see details.raw.)` : ""),
+        details: { mode: owned ? "cli" : "anonymous", url, claimUrl, owned, siteName, fileCount, raw },
       };
     } catch (e) {
-      return { ok: false, message: (e as Error).message, details: { mode: "anonymous" } };
+      return { ok: false, message: (e as Error).message, details: { mode: "cli" } };
     }
   }
 

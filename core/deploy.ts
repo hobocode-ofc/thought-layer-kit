@@ -68,20 +68,25 @@ export function sanitizeSiteName(raw: string): string {
     .replace(/-+$/g, "");
 }
 
-// Pull the live URL and the claim URL out of `netlify deploy --allow-anonymous`
-// output. The CLI prints a one-hour claim link for the unclaimed site; we never
-// synthesize it ourselves (the anonymous handshake is Netlify's, not ours).
-export function parseAnonymousOutput(output: string): { url: string | null; claimUrl: string | null } {
-  const claim = output.match(/https:\/\/app\.netlify\.com\/claim\S*/);
-  // The live site URL: prefer a *.netlify.app that is not the admin/app host.
-  const live = output.match(/https:\/\/[a-z0-9-]+\.netlify\.app\S*/i);
+// Pull the live URL and (anonymous only) the claim link out of `netlify deploy`
+// output. The CLI prints several *.netlify.app URLs - the production site URL
+// and a unique per-deploy URL (whose host carries a "--" prefix); prefer the
+// production one. The claim link only appears for an anonymous, unclaimed site;
+// we never synthesize it ourselves (the handshake is Netlify's, not ours).
+export function parseCliDeployOutput(output: string): { url: string | null; claimUrl: string | null } {
+  // Stop the URL at whitespace OR a wrapping bracket/quote: the CLI sometimes
+  // prints links as <url> or in a box, and a greedy \S* would swallow the ">".
+  const claim = output.match(/https:\/\/app\.netlify\.com\/claim[^\s<>"')\]]*/);
+  const all = (output.match(/https:\/\/[a-z0-9-]+\.netlify\.app[^\s<>"')\]]*/gi) || []).map(stripTrailingPunctuation);
+  const host = (u: string): string => u.replace(/^https:\/\//, "").split("/")[0]!;
+  const prod = all.find((u) => !host(u).includes("--")); // skip the per-deploy URL
   return {
-    url: live ? stripTrailingPunctuation(live[0]) : null,
+    url: prod || all[0] || null,
     claimUrl: claim ? stripTrailingPunctuation(claim[0]) : null,
   };
 }
 
-const stripTrailingPunctuation = (s: string): string => s.replace(/[).,]+$/, "");
+const stripTrailingPunctuation = (s: string): string => s.replace(/[)\]>.,'"<]+$/, "");
 
 // The deploy record written next to build.json / the state file. Pure provenance
 // so a re-deploy can target the same site and the user can find their URLs.
@@ -90,7 +95,7 @@ export interface DeployRecord {
   kind: "deploy";
   version: 1;
   deployedAt: string;
-  mode: "token" | "anonymous" | "dry-run";
+  mode: "token" | "cli" | "anonymous" | "dry-run";
   provider: "netlify";
   publishDir: string;
   fileCount: number;

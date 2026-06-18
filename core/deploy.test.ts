@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   sha1Hex, buildFileDigests, normalizeKey, uploadPath, sanitizeSiteName,
-  parseAnonymousOutput, deployRecord,
+  parseCliDeployOutput, deployRecord,
 } from "./deploy.ts";
 import { runDeploy } from "./deploy-io.ts";
 
@@ -50,19 +50,30 @@ describe("sanitizeSiteName", () => {
   });
 });
 
-describe("parseAnonymousOutput", () => {
-  it("extracts the live URL and the claim link from CLI output", () => {
+describe("parseCliDeployOutput", () => {
+  it("extracts the live URL and the claim link from anonymous CLI output", () => {
     const out = [
       "Deploying to draft URL...",
       "Website URL: https://wonderful-cupcake-123abc.netlify.app",
       "To claim this site, visit: https://app.netlify.com/claim?#eyJhbGciOi.token.sig",
     ].join("\n");
-    const { url, claimUrl } = parseAnonymousOutput(out);
+    const { url, claimUrl } = parseCliDeployOutput(out);
     expect(url).toBe("https://wonderful-cupcake-123abc.netlify.app");
     expect(claimUrl).toBe("https://app.netlify.com/claim?#eyJhbGciOi.token.sig");
   });
+  it("prefers the production URL over the unique per-deploy URL", () => {
+    const out = [
+      "Unique deploy URL: https://6a339125--deluxe-chaja.netlify.app",
+      "Website URL:       https://deluxe-chaja.netlify.app",
+    ].join("\n");
+    expect(parseCliDeployOutput(out).url).toBe("https://deluxe-chaja.netlify.app");
+  });
+  it("strips a wrapping bracket the CLI prints around the URL", () => {
+    expect(parseCliDeployOutput("Live: <https://thought-layer-612d9610.netlify.app>").url)
+      .toBe("https://thought-layer-612d9610.netlify.app");
+  });
   it("returns nulls when neither is present", () => {
-    expect(parseAnonymousOutput("nothing useful here")).toEqual({ url: null, claimUrl: null });
+    expect(parseCliDeployOutput("nothing useful here")).toEqual({ url: null, claimUrl: null });
   });
 });
 

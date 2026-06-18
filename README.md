@@ -64,7 +64,7 @@ The hosted version of the rigor lives at [weareallproductmanagersnow.com](https:
 
 - **Done:** the rigor as portable skills; a Pi package with deterministic tools + slash commands; the portable progress file (`tl_state` / the `tl` CLI) shared with the web app; and the speedrun.
 - **Phase 3 (done):** a `build` step that turns the hardened PRD into a deploy-ready artifact, built by your own agent (`/tl-build`), with a deterministic `tl_scaffold` tool that writes an instantly-deployable branded static site as the floor.
-- **Phase 4 (done):** a `deploy` step (`/tl-deploy`, the `deploy` tool, or `tl deploy`) that takes the build live to a URL you own, closing the loop. With a Netlify token it deploys into your own account (owned immediately, no claim step); with no account it uses the Netlify CLI's `--allow-anonymous` flow for an instant URL plus a one-hour claim link. BYOK, no central account, no lock-in. `--dry-run` shows the plan first.
+- **Phase 4 (done):** a `deploy` step (`/tl-deploy`, the `deploy` tool, or `tl deploy`) that takes the build live to a URL you own, closing the loop. With a Netlify token it deploys into your own account via the file-digest API (owned immediately, no claim step); with no token it delegates to your Netlify CLI - logged in it creates a site in your account, logged out it deploys anonymously with a one-hour claim link. BYOK, no central account, no lock-in. `--dry-run` shows the plan first.
 
 ## Notes for contributors
 

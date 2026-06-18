@@ -1,6 +1,6 @@
 ---
 name: thought-layer-deploy
-description: "Take the built site live to a user-owned URL with no lock-in, the last step after the build. Reads .thought-layer/build.json (the publish dir + entry) next to the state file, then deploys to Netlify by one of two BYOK models: with NETLIFY_AUTH_TOKEN set it deploys into the user's OWN account via the file-digest API (owned immediately, no claim), and with no token it uses the Netlify CLI's own --allow-anonymous flow for an instant live URL plus a one-hour claim link. Static-first: if build.json says hasBackend it warns that only the front end ships this way. Prefers the deploy tool (Pi) or the tl deploy CLI (any shell agent) so the deploy is one mechanical, honest step, never hand-rolled. Run it after thought-layer-build (or tl_scaffold) has produced build.json."
+description: "Take the built site live to a user-owned URL with no lock-in, the last step after the build. Reads .thought-layer/build.json (the publish dir + entry) next to the state file, then deploys to Netlify by one of two BYOK models: with NETLIFY_AUTH_TOKEN set it deploys into the user's OWN account via the file-digest API (owned immediately, no claim), and with no token it delegates to the user's Netlify CLI (logged in: a new site in their account; logged out: an anonymous, claimable URL with a one-hour claim link). Static-first: if build.json says hasBackend it warns that only the front end ships this way. Prefers the deploy tool (Pi) or the tl deploy CLI (any shell agent) so the deploy is one mechanical, honest step, never hand-rolled. Run it after thought-layer-build (or tl_scaffold) has produced build.json."
 ---
 
 # Deploy it: the build goes live to a URL you own
@@ -27,9 +27,11 @@ Always **dry-run first** and show the user the file list and the target, then de
 The tool picks automatically; explain which one ran.
 
 - **BYO token (the default when `NETLIFY_AUTH_TOKEN` is set).** Deploys straight into the user's own Netlify account via the file-digest API (no zip, no extra dependency). The site is theirs from the first second - **no claim step**. Re-deploy to the same site with `--site <id>` (the id is in the deploy output and `deploy.json`). The token is read **only from the environment** - never ask the user to paste it into the chat, and never put it in a tool parameter or a file.
-- **Anonymous (when no token is set).** Delegates to the Netlify CLI's `netlify deploy --allow-anonymous` (Netlify's own supported flow) for an instant live URL plus a **one-hour claim link** that transfers ownership to whatever account the user logs into. We never reverse-engineer that handshake. It needs a current Netlify CLI (`npm i -g netlify-cli@latest`; the flag shipped 2026-03); if the CLI is missing or too old, the tool says exactly what to do (set a token, update the CLI, or drag the publish dir onto https://app.netlify.com/drop).
+- **Netlify CLI (when no token is set).** Delegates to the user's installed Netlify CLI, and branches on the CLI's own login state (a logged-in CLI ignores `--allow-anonymous`, so the tool checks):
+  - **logged in** -> creates a new site in the user's own account (`--create-site`, owned immediately, **no claim**), or re-deploys to `--site <id>`.
+  - **logged out** -> an **anonymous, claimable** site (`--allow-anonymous`) with a **one-hour claim link** that transfers ownership to whatever account the user logs into. We never reverse-engineer that handshake; it needs a current CLI (`npm i -g netlify-cli@latest`; the flag shipped 2026-03).
 
-If neither a token nor a usable CLI is available, relay the tool's guidance honestly instead of pretending it deployed.
+If neither a token nor a usable CLI is available, relay the tool's guidance honestly (set a token, install/update the CLI, or drag the publish dir onto https://app.netlify.com/drop) instead of pretending it deployed. If the user explicitly asked for an anonymous deploy but the CLI is logged in, the tool says it went to their account instead and that `netlify logout` first would make it anonymous - pass that on.
 
 ## Static-first honesty
 

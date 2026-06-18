@@ -9,7 +9,7 @@ import {
   aggregateConfidence, statusFromConfidence, gradeFromConfidence,
   checkDomains, registrarSearchUrl,
   computeProjection, fmtMoney,
-  applyStateOp,
+  applyStateOp, runScaffold,
   type Assumptions, type StateOp,
 } from "../core/index.ts";
 
@@ -176,6 +176,30 @@ export default function (pi: ExtensionAPI) {
     }),
     async execute(_id, params): Promise<ToolResult> {
       const r = applyStateOp(params as StateOp, { ts: Date.now(), exportedAt: new Date().toISOString() });
+      return text(r.message, r.details);
+    },
+  });
+
+  // tl_scaffold: deterministically generate a self-contained, branded,
+  // SEO-complete static site (the instantly-deployable floor) from the spec +
+  // brand in the state file - no model needed. Writes the site to a publish dir
+  // plus a build.json manifest the deploy step consumes.
+  pi.registerTool({
+    name: "tl_scaffold",
+    label: "Thought Layer: scaffold",
+    description:
+      "Deterministically scaffold a self-contained, branded, SEO-complete static landing site (an instantly-deployable floor) from the spec + brand in the state file - no model call. " +
+      "Use it for the fastest path to something live, or as the floor when a model build is thin or fails. Writes the site (index.html + llms.txt/robots.txt/sitemap.xml/_redirects/netlify.toml/SEO.md) to the publish dir and a build.json manifest for the deploy step. " +
+      "The full product is built by the thought-layer-build skill; this is the guaranteed deployable baseline.",
+    parameters: Type.Object({
+      path: Type.Optional(Type.String({ description: "State file (or project dir) to read the spec + brand from. Defaults to ./.thought-layer/state.json; honors a named file." })),
+      outDir: Type.Optional(Type.String({ description: "Publish directory to write the site into. Defaults to ./dist." })),
+      domain: Type.Optional(Type.String({ description: "The site's real domain (e.g. https://acme.com) for canonical/OG/sitemap. Defaults to a placeholder you fill later." })),
+      founder: Type.Optional(Type.String({ description: "Founder name for the schema.org Person + footer. Optional." })),
+    }),
+    async execute(_id, params): Promise<ToolResult> {
+      const p = params as { path?: string; outDir?: string; domain?: string; founder?: string };
+      const r = runScaffold({ path: p.path, outDir: p.outDir, domain: p.domain, founderName: p.founder }, { builtAt: new Date().toISOString() });
       return text(r.message, r.details);
     },
   });

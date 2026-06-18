@@ -64,6 +64,8 @@
     "core/stage-map.ts",
     "core/state-file.ts",
     "core/state-ops.ts",
+    "core/scaffold.ts",
+    "core/scaffold-io.ts",
     "dist",
     "README.md",
     "LICENSE"

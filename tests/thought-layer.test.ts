@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import extension from "../extensions/thought-layer.ts";
@@ -33,7 +33,7 @@ beforeAll(() => {
 
 describe("thought-layer Pi extension", () => {
   it("loads its factory and registers the deterministic tools", () => {
-    expect(Object.keys(tools).sort()).toEqual(["tl_domains", "tl_project", "tl_score", "tl_state"]);
+    expect(Object.keys(tools).sort()).toEqual(["tl_domains", "tl_project", "tl_scaffold", "tl_score", "tl_state"]);
   });
 
   it("tl_score returns the exact band + grade", async () => {
@@ -122,5 +122,38 @@ describe("tl_state tool (end to end against a temp file)", () => {
     const files = (r.details!.files as Array<{ name: string }>).map((f) => f.name).sort();
     expect(files).toEqual(["acme.json", "bravo.json"]);
     expect(r.content[0]!.text).toContain("2 state file");
+  });
+});
+
+describe("tl_scaffold tool (deterministic deployable site)", () => {
+  const proj = mkdtempSync(join(tmpdir(), "tl-scaffold-"));
+  const sp = join(proj, ".thought-layer", "state.json");
+  const out = join(proj, "dist");
+
+  it("writes a branded static site + a build.json manifest from the state file", async () => {
+    await tools.tl_state!.execute("t", { op: "answer", path: sp, qId: "what-statement", value: "a dispatch tool for HVAC crews" });
+    await tools.tl_state!.execute("t", { op: "answer", path: sp, qId: "pitch", value: "Schedule your whole crew in one tap." });
+    await tools.tl_state!.execute("t", {
+      op: "artifact", path: sp, artifact: "brand",
+      value: { guide: { brandName: "Crewline", tagline: "Dispatch made simple", palette: [{ name: "Primary", hex: "#0a3d62" }], typography: { display: { family: "Fraunces" }, body: { family: "Inter" } } } },
+    });
+
+    const r = await tools.tl_scaffold!.execute("t", { path: sp, outDir: out, domain: "https://crewline.app", founder: "Jeremy" });
+    expect(r.content[0]!.text).toContain("Crewline");
+
+    const html = readFileSync(join(out, "index.html"), "utf8");
+    expect(html).toContain("Crewline");
+    expect(html).toContain("Schedule your whole crew");
+    expect(html).toContain("--p:#0a3d62");
+    expect(html).toContain("https://crewline.app/");
+    expect(existsSync(join(out, "llms.txt"))).toBe(true);
+    expect(existsSync(join(out, "robots.txt"))).toBe(true);
+    expect(existsSync(join(out, "netlify.toml"))).toBe(true);
+
+    const manifest = JSON.parse(readFileSync(join(proj, ".thought-layer", "build.json"), "utf8"));
+    expect(manifest.producer).toBe("scaffold");
+    expect(manifest.publishDir).toBe(out);
+    expect(manifest.entry).toBe("index.html");
+    expect(manifest.hasBackend).toBe(false);
   });
 });

@@ -23,11 +23,13 @@
 
 import { readFileSync } from "node:fs";
 import { applyStateOp, type StateOp } from "../core/state-ops.ts";
+import { runScaffold } from "../core/scaffold-io.ts";
 
 const HELP = `tl - read/write a portable Thought Layer state file (default: .thought-layer/state.json)
 
   tl read [path] [--json]            where the run stands
   tl list [dir]                      list the state files under .thought-layer/ (juggle several ideas)
+  tl scaffold [--out dist] [--domain x.com] [--founder "Name"]  deterministic deployable static site from the spec + brand
   tl export [path]                   handoff check
   tl answer <qId> <value> [path]     record an answer
   tl feedback --data '<json>'        record a panel verdict ({qId,mode,personas,endState,round})
@@ -101,6 +103,23 @@ function main(): void {
   // invocation form (npx with or without `tl`, or a global `tl`) resolves the op.
   if (args[0] === "tl" || args[0] === "thought-layer") args.shift();
   if (flags["help"] || args.length === 0) { console.log(HELP); process.exit(0); }
+
+  // scaffold is a distinct capability (generate a deployable site), not a state op.
+  if (args[0] === "scaffold") {
+    const r = runScaffold(
+      {
+        path: typeof flags["path"] === "string" ? flags["path"] : undefined,
+        outDir: typeof flags["out"] === "string" ? flags["out"] : undefined,
+        domain: typeof flags["domain"] === "string" ? flags["domain"] : undefined,
+        founderName: typeof flags["founder"] === "string" ? flags["founder"] : undefined,
+      },
+      { builtAt: new Date().toISOString() },
+    );
+    if (flags["json"]) console.log(JSON.stringify(r.details, null, 2));
+    else console.log(r.message);
+    process.exit(r.ok ? 0 : 1);
+  }
+
   let payload: StateOp;
   try { payload = buildOp(args, flags); }
   catch (e) { console.error((e as Error).message); process.exit(2); return; }

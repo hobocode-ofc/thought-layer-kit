@@ -9,7 +9,7 @@ import {
   aggregateConfidence, statusFromConfidence, gradeFromConfidence,
   checkDomains, registrarSearchUrl,
   computeProjection, fmtMoney,
-  applyStateOp, runScaffold, runDeploy,
+  applyStateOp, runScaffold, runDeploy, runSync,
   type Assumptions, type StateOp,
 } from "../core/index.ts";
 
@@ -233,6 +233,37 @@ export default function (pi: ExtensionAPI) {
       const r = await runDeploy(
         { path: p.path, dryRun: p.dryRun, anonymous: p.anonymous, siteName: p.siteName, siteId: p.siteId, staticOnly: p.staticOnly, provisionDb: p.provisionDb, applySchema: p.applySchema },
         { deployedAt: new Date().toISOString() },
+      );
+      return text(r.message, r.details);
+    },
+  });
+
+  // tl_sync: store and sync session files in the user's OWN private GitHub repo.
+  // Git is transport + history + multi-user; the kit reconciles concurrent edits
+  // itself. Collaboration is granted on GitHub (the kit never changes permissions).
+  pi.registerTool({
+    name: "tl_sync",
+    label: "Thought Layer: sync sessions",
+    description:
+      "Store and sync your Thought Layer session files in your OWN private GitHub repo (BYOK, no central account). " +
+      "ops: init (set a repo as a sessions workspace), save (snapshot the current state as a named session, commit, push), list, open (pull and resume a session), pull (reconcile remote edits), push, status. " +
+      "Each session is one .thought-layer/<name>.json in the repo; save prompts you for a human name. Git carries history and multi-user; the kit reconciles concurrent edits itself (newest wins per field, conflicts reported), so it never hand-merges JSON. " +
+      "Collaboration is granted on GitHub: you add collaborators to the repo, the kit never changes permissions. Needs git installed (gh optional, used to create a repo).",
+    parameters: Type.Object({
+      op: Type.String({ description: "init | save | list | open | pull | push | status" }),
+      name: Type.Optional(Type.String({ description: "Session name (save/open) or workspace label (init). A human name, slugged to <name>.json." })),
+      repo: Type.Optional(Type.String({ description: "init only: the private GitHub repo to use (owner/name or a URL)." })),
+      dir: Type.Optional(Type.String({ description: "Explicit clone dir for the workspace (overrides the configured one)." })),
+      workspace: Type.Optional(Type.String({ description: "Select an existing workspace by its label." })),
+      message: Type.Optional(Type.String({ description: "Commit message for save/push." })),
+      noPush: Type.Optional(Type.Boolean({ description: "save/push: commit locally without pushing." })),
+      path: Type.Optional(Type.String({ description: "save: the current working state file to snapshot (defaults to the session default)." })),
+    }),
+    async execute(_id, params): Promise<ToolResult> {
+      const p = params as { op: string; name?: string; repo?: string; dir?: string; workspace?: string; message?: string; noPush?: boolean; path?: string };
+      const r = await runSync(
+        { op: p.op, name: p.name, repo: p.repo, dir: p.dir, workspace: p.workspace, message: p.message, noPush: p.noPush, path: p.path },
+        { ts: Date.now(), exportedAt: new Date().toISOString() },
       );
       return text(r.message, r.details);
     },

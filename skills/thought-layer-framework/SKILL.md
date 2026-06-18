@@ -59,6 +59,15 @@ No one finishes this in one sitting. The work lives in a portable file, `.though
 
 **At session end or handoff,** run `export` to confirm the file is current, and tell the founder where it is and that they (or a collaborator) can load it into the web app or keep going with the agent.
 
+## Sync and collaborate (optional: a private GitHub repo as the home for sessions)
+
+For founders juggling several ideas, or collaborating with others, the session files can live in the user's OWN private GitHub repo instead of just locally. The `tl_sync` tool (Pi) or `tl sync` (any shell) manages it, BYOK with no central account:
+- `tl sync init --repo <owner/name>` sets a private repo as a sessions workspace (one repo for the user's own projects, a separate repo per outside founder they help, so each stays isolated).
+- `tl sync save --name <name>` snapshots the current state as a named session (photobooth, peptide, blogging), commits, and pushes. `tl sync list` lists them; `tl sync open --name <name>` pulls and resumes one (it prints the `THOUGHT_LAYER_STATE` line to point the rest of the session at that file).
+- Collaboration is granted on GitHub: the user adds collaborators to the repo themselves; the kit never changes permissions. When two people edit the same session, the kit reconciles the two copies itself (newest wins per field, any coarse tie-break is reported), so git never has to merge the JSON by hand.
+
+This is optional. The local default (`.thought-layer/state.json`) and the web-app handoff above work exactly as before without it.
+
 ## Part 1: Validate the idea
 
 Altitude: is the idea clear, honest, real, and worth pursuing? Not how it will be built.

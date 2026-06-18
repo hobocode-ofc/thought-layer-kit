@@ -25,6 +25,7 @@ import { readFileSync } from "node:fs";
 import { applyStateOp, type StateOp } from "../core/state-ops.ts";
 import { runScaffold } from "../core/scaffold-io.ts";
 import { runDeploy } from "../core/deploy-io.ts";
+import { runSync } from "../core/sync-io.ts";
 
 const HELP = `tl - read/write a portable Thought Layer state file (default: .thought-layer/state.json)
 
@@ -33,6 +34,8 @@ const HELP = `tl - read/write a portable Thought Layer state file (default: .tho
   tl scaffold [--out dist] [--domain x.com] [--founder "Name"]  deterministic deployable static site from the spec + brand
   tl deploy [--dry-run] [--anonymous] [--name x] [--site id]  take build.json's publish dir live to a user-owned Netlify URL
             [--static-only] [--provision-db] [--apply-schema]   when build.json has a backend: ships functions+env by default; flags opt out or add Neon provision/schema
+  tl sync <init|save|list|open|pull|push|status>             store/sync your session files in your own private GitHub repo
+            [--repo owner/name] [--name x] [--dir p] [--workspace w] [--message m] [--no-push]
   tl export [path]                   handoff check
   tl answer <qId> <value> [path]     record an answer
   tl feedback --data '<json>'        record a panel verdict ({qId,mode,personas,endState,round})
@@ -138,6 +141,29 @@ function main(): void {
         applySchema: flags["apply-schema"] === true,
       },
       { deployedAt: new Date().toISOString() },
+    ).then((r) => {
+      if (flags["json"]) console.log(JSON.stringify(r.details, null, 2));
+      else console.log(r.message);
+      process.exit(r.ok ? 0 : 1);
+    });
+    return;
+  }
+
+  // sync stores/syncs session files in the user's own private GitHub repo; it is
+  // async (git/gh), so it resolves before exiting, like deploy.
+  if (args[0] === "sync") {
+    runSync(
+      {
+        op: typeof args[1] === "string" ? args[1] : "status",
+        name: typeof flags["name"] === "string" ? flags["name"] : undefined,
+        repo: typeof flags["repo"] === "string" ? flags["repo"] : undefined,
+        dir: typeof flags["dir"] === "string" ? flags["dir"] : undefined,
+        workspace: typeof flags["workspace"] === "string" ? flags["workspace"] : undefined,
+        message: typeof flags["message"] === "string" ? flags["message"] : undefined,
+        noPush: flags["no-push"] === true,
+        path: typeof flags["path"] === "string" ? flags["path"] : undefined,
+      },
+      { ts: Date.now(), exportedAt: new Date().toISOString() },
     ).then((r) => {
       if (flags["json"]) console.log(JSON.stringify(r.details, null, 2));
       else console.log(r.message);

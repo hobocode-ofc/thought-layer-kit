@@ -20,8 +20,9 @@ This is open source and BYOK by design. The point is to help people build real t
 
 **A Pi package** that adds, on top of the skills:
 
-- **Deterministic tools** the agent can call so the math is exact and never re-derived: `tl_score` (confidence to status and grade), `tl_domains` (availability, BYOK), `tl_project` (the numeric business projection).
-- **Slash commands** (prompt templates): `/tl` runs the whole flow, and `/tl-panel`, `/tl-grill`, `/tl-prd`, `/tl-naming` run each stage.
+- **Deterministic tools** the agent can call so the math is exact and never re-derived: `tl_score` (confidence to status and grade), `tl_domains` (availability, BYOK), `tl_project` (the numeric business projection), `tl_state` (the portable progress file), and `tl_scaffold` (a deterministic, deployable static site from the spec + brand).
+- **Slash commands** (prompt templates): `/tl` runs the whole flow; `/tl-speedrun` is the fast unranked path; `/tl-panel`, `/tl-grill`, `/tl-prd`, `/tl-naming` run each stage; `/tl-build` builds the hardened PRD into a deploy-ready artifact.
+- **A `tl` CLI** for any shell agent (`npx -y @hobocode/thought-layer tl ...`): `read`/`list`/`answer`/`feedback`/`artifact`/`cursor`/`export` for the shared progress file, and `scaffold` for the deployable static-site floor.
 
 ## Install
 
@@ -61,8 +62,8 @@ The hosted version of the rigor lives at [weareallproductmanagersnow.com](https:
 
 ## Roadmap
 
-- **Done:** the rigor as portable skills, and a Pi package with deterministic tools + slash commands.
-- **Phase 3:** a `build` step that turns the PRD into a deploy-ready artifact, built by your own agent.
+- **Done:** the rigor as portable skills; a Pi package with deterministic tools + slash commands; the portable progress file (`tl_state` / the `tl` CLI) shared with the web app; and the speedrun.
+- **Phase 3 (done):** a `build` step that turns the hardened PRD into a deploy-ready artifact, built by your own agent (`/tl-build`), with a deterministic `tl_scaffold` tool that writes an instantly-deployable branded static site as the floor.
 - **Phase 4:** a `deploy` step that publishes it to a live URL you own (Netlify deploy-and-claim by default), closing the loop.
 
 ## Notes for contributors

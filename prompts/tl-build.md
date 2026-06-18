@@ -1,0 +1,7 @@
+Apply the **thought-layer-build** skill. Build the hardened PRD into a static-first, deploy-ready artifact - a self-contained site or a Vite/static build that yields a predictable `dist/`-style publish directory.
+
+If there is no hardened PRD in the state file (`state.prd.markdown` + requirements), say so and point me to `/tl` (or `/tl-prd` then `/tl-grill`) rather than building from a bare idea - only proceed cold if I tell you to.
+
+Honor the ubiquitous language (the glossary), R-ID traceability, the out-of-scope list, mobile+desktop, the brand if present, and the full SEO/discoverability layer. Default to static; escalate to a backend only when a requirement genuinely needs one, and flag loudly that the default deploy path is static. Verify the build runs, and leave `.thought-layer/build.json` + `DECISIONS.md` + `TRACEABILITY.md`.
+
+Read the spec from the state file (default `.thought-layer/state.json`; honor `--path` / `THOUGHT_LAYER_STATE` if a named file is in use). For the fastest deployable floor, or if a full build is too much, run the **tl_scaffold** tool to write a branded, SEO-complete static landing site and the same `build.json` manifest.

@@ -89,6 +89,8 @@ This is where "how will it actually be built" gets answered. Every implementatio
 14. **The PRD (draft).** Run the **thought-layer-prd** skill: compose a complete first-draft PRD — including a first-cut domain glossary and testable requirements — from the validated idea and the business model above.
 15. **The Grill.** Run the **thought-layer-grill** skill: grill that draft PRD. Challenge it against the domain one question at a time, sharpen the glossary, surface contradictions, unstated rules, and edge cases, and update the PRD inline until it is build-ready.
 
+Once the grill has hardened the PRD, the spec is build-ready. Run the **thought-layer-build** skill (`/tl-build`) to turn it into a static-first, deploy-ready artifact (or the `tl_scaffold` tool for an instant deployable landing-page floor). This is the build step, not another validation stage.
+
 ## Supporting passes (run when relevant)
 
 Not strictly sequential; pull them in when they help: market research on the segment, a SWOT once the picture is full, and **thought-layer-naming** plus domain checks when the thing needs a name. These inform the stages above; they do not replace them.

@@ -49,6 +49,8 @@ The speedrun gets you all the way to a real spec, fast. The two design steps are
 
 What you get is a fast first draft built on a gut-check, not a validated spec. Re-running the grill under `/tl`, with the panels behind it, is what turns it into something to bet on.
 
+With the PRD hardened you have a build-ready spec - run the **thought-layer-build** skill (`/tl-build`) to build it, or the `tl_scaffold` tool for an instant deployable landing page. (A speedrun spec is a gut-check; re-grill under `/tl` before you bet on it.)
+
 ## Persisting
 
 Write to the state file as you go, like the full framework (see the **thought-layer-framework** skill's "Saving and resuming"): answers via op `answer`, the bizModel / naming / brand / prd / grill via op `artifact`, and a cursor via op `cursor` after each stage so the file resumes and upgrades cleanly (use the backbone stage numbers - the spine maps to stages 1, 3, 4, 9, 10, then the PRD is 14 and the grill 15; set `phase` to `speedrun`). The default file is `.thought-layer/state.json`; to keep several ideas apart, pass `--path .thought-layer/<name>.json` (or the tool's `path`) on every op, or set `THOUGHT_LAYER_STATE`, and use `list` to see what is already there. **Do not write graded feedback** - the speedrun does not rank, so there are no panel verdicts to store and the answers persist ungraded.

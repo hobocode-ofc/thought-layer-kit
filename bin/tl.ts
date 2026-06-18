@@ -32,6 +32,7 @@ const HELP = `tl - read/write a portable Thought Layer state file (default: .tho
   tl list [dir]                      list the state files under .thought-layer/ (juggle several ideas)
   tl scaffold [--out dist] [--domain x.com] [--founder "Name"]  deterministic deployable static site from the spec + brand
   tl deploy [--dry-run] [--anonymous] [--name x] [--site id]  take build.json's publish dir live to a user-owned Netlify URL
+            [--static-only] [--provision-db] [--apply-schema]   when build.json has a backend: ships functions+env by default; flags opt out or add Neon provision/schema
   tl export [path]                   handoff check
   tl answer <qId> <value> [path]     record an answer
   tl feedback --data '<json>'        record a panel verdict ({qId,mode,personas,endState,round})
@@ -132,6 +133,9 @@ function main(): void {
         anonymous: flags["anonymous"] === true,
         siteName: typeof flags["name"] === "string" ? flags["name"] : undefined,
         siteId: typeof flags["site"] === "string" ? flags["site"] : undefined,
+        staticOnly: flags["static-only"] === true,
+        provisionDb: flags["provision-db"] === true,
+        applySchema: flags["apply-schema"] === true,
       },
       { deployedAt: new Date().toISOString() },
     ).then((r) => {

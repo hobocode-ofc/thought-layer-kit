@@ -13,7 +13,13 @@ follow from that.
   never written to disk. The `deploy.json` record stores the resulting URLs and
   ids, never the token. When a build emits a backend, the generated `.env.example`
   is a names-only contract (every line is a bare `NAME=`): real values live only
-  in the host environment, never in a committed file.
+  in the host environment, never in a committed file. When the deploy sets those
+  env vars on your site, it reads the VALUES only from the deploy environment and
+  pushes them to your own Netlify account (in the API request body, or a
+  `0600`-mode temp file consumed by the Netlify CLI and deleted after); the
+  database connection string reaches `psql` through child-process environment
+  variables, never a command line. Values are never logged, never placed on a
+  command line, and the `deploy.json` record names env vars only, never values.
 - **Deploys go to your own account.** With a token, the deploy uses Netlify's
   file-digest API to publish into your account. With no token, it delegates to
   your installed Netlify CLI (a site in your account when logged in, or an

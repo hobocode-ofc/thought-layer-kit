@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  renderEnvExample, renderBackendGuide, normalizeBackendMeta, NEON_DEFAULT_DB,
-  type EnvVarSpec, type BackendGuideInput,
+  renderEnvExample, renderBackendGuide, normalizeBackendMeta, planEnvVars, planFunctions, NEON_DEFAULT_DB,
+  type EnvVarSpec, type BackendGuideInput, type BackendMeta,
 } from "./backend.ts";
 
 // The dash ban for generated user-facing copy: no em-dash, no en-dash, and no
@@ -157,5 +157,43 @@ describe("normalizeBackendMeta", () => {
     expect(m).not.toBeNull();
     expect(m!.backendKind).toBe("serverless"); // invalid/absent kind defaults to serverless
     expect(m!.database).toBeNull(); // no database declared -> stays null
+  });
+});
+
+describe("planEnvVars / planFunctions", () => {
+  const backend: BackendMeta = {
+    backendKind: "serverless", functionsDir: "netlify/functions", runtime: "nodejs20.x", nodeVersion: "20",
+    envVars: [
+      { name: "STRIPE_SECRET_KEY", required: true, description: "" },
+      { name: "PUBLIC_FLAG", required: false, description: "" },
+    ],
+    database: { provider: "neon", schemaFile: "schema.sql", envVar: "DATABASE_URL" },
+    guide: "BACKEND.md",
+  };
+
+  it("plans names + policy only, never a value, including the database var", () => {
+    const plan = planEnvVars(backend);
+    const names = plan.map((p) => p.name);
+    expect(names).toEqual(["DATABASE_URL", "PUBLIC_FLAG", "STRIPE_SECRET_KEY"]); // deduped + sorted, db var included
+    for (const item of plan) {
+      expect(Object.keys(item).sort()).toEqual(["context", "isSecret", "name", "scopes"]); // no "value" field exists
+      expect(item.scopes).toEqual(["builds", "functions"]);
+      expect(item.context).toBe("all");
+    }
+  });
+
+  it("marks credentials secret and plain names not", () => {
+    const byName = Object.fromEntries(planEnvVars(backend).map((p) => [p.name, p.isSecret]));
+    expect(byName["DATABASE_URL"]).toBe(true);
+    expect(byName["STRIPE_SECRET_KEY"]).toBe(true);
+    expect(byName["PUBLIC_FLAG"]).toBe(false);
+  });
+
+  it("is deterministic", () => {
+    expect(planEnvVars(backend)).toEqual(planEnvVars(backend));
+  });
+
+  it("planFunctions returns the dir and a js-clamped runtime", () => {
+    expect(planFunctions(backend)).toEqual({ functionsDir: "netlify/functions", runtime: "js" });
   });
 });

@@ -214,20 +214,24 @@ export default function (pi: ExtensionAPI) {
     name: "deploy",
     label: "Thought Layer: deploy",
     description:
-      "Take the built site live to a user-owned URL. Reads build.json (publishDir/entry) next to the state file, then deploys to Netlify. " +
+      "Take the built site live to a user-owned URL. Reads build.json (publishDir/entry, and the backend block when present) next to the state file, then deploys to Netlify. " +
       "Two models, both BYOK with no lock-in: with NETLIFY_AUTH_TOKEN set (read from the environment only, never a parameter) it deploys into the user's OWN account via the file-digest API (no zip); with no token it uses the Netlify CLI's --allow-anonymous flow for an instant live URL plus a one-hour claim link. " +
-      "Run the build first (thought-layer-build / tl_scaffold). Use dryRun:true to preview the file plan with no network call. Static-first: if build.json has hasBackend:true it warns that only the front end ships this way.",
+      "When build.json declares a backend it ships automatically: the functions go up via the user's Netlify CLI and the declared env var names are set on the site (values read only from the environment, BYOK). DATABASE_URL is bring-your-own by default; provisionDb and applySchema are opt in. staticOnly ships just the front end. " +
+      "Run the build first (thought-layer-build / tl_scaffold). Use dryRun:true to preview the file and backend plan with no network call.",
     parameters: Type.Object({
       path: Type.Optional(Type.String({ description: "State file (or project dir) whose build.json to deploy. Defaults to ./.thought-layer/state.json; honors a named file." })),
-      dryRun: Type.Optional(Type.Boolean({ description: "Plan only: walk the publish dir and report the files + target, with no network call or CLI spawn." })),
+      dryRun: Type.Optional(Type.Boolean({ description: "Plan only: walk the publish dir and report the files, target, and backend plan, with no network call or CLI spawn." })),
       anonymous: Type.Optional(Type.Boolean({ description: "Force the no-account path (Netlify CLI --allow-anonymous) even if a token is set. Default: token path when NETLIFY_AUTH_TOKEN is set, else anonymous." })),
-      siteName: Type.Optional(Type.String({ description: "Token path only: create the site under this name (a-z0-9-). Omit to let Netlify assign a random subdomain." })),
-      siteId: Type.Optional(Type.String({ description: "Token path only: re-deploy to an existing site id instead of creating a new one." })),
+      siteName: Type.Optional(Type.String({ description: "Create the site under this name (a-z0-9-). Omit to let Netlify assign a random subdomain." })),
+      siteId: Type.Optional(Type.String({ description: "Re-deploy to an existing site id instead of creating a new one." })),
+      staticOnly: Type.Optional(Type.Boolean({ description: "Ship only the front end even when build.json declares a backend." })),
+      provisionDb: Type.Optional(Type.Boolean({ description: "Opt in: provision Neon with the user's own NEON_API_KEY (read from the environment). Default off, which uses a bring-your-own DATABASE_URL." })),
+      applySchema: Type.Optional(Type.Boolean({ description: "Opt in: apply schema.sql with psql once the database is reachable. Default off." })),
     }),
     async execute(_id, params): Promise<ToolResult> {
-      const p = params as { path?: string; dryRun?: boolean; anonymous?: boolean; siteName?: string; siteId?: string };
+      const p = params as { path?: string; dryRun?: boolean; anonymous?: boolean; siteName?: string; siteId?: string; staticOnly?: boolean; provisionDb?: boolean; applySchema?: boolean };
       const r = await runDeploy(
-        { path: p.path, dryRun: p.dryRun, anonymous: p.anonymous, siteName: p.siteName, siteId: p.siteId },
+        { path: p.path, dryRun: p.dryRun, anonymous: p.anonymous, siteName: p.siteName, siteId: p.siteId, staticOnly: p.staticOnly, provisionDb: p.provisionDb, applySchema: p.applySchema },
         { deployedAt: new Date().toISOString() },
       );
       return text(r.message, r.details);

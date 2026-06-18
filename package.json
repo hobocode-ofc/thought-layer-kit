@@ -1,6 +1,6 @@
 {
   "name": "@hobocode/thought-layer",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "The Thought Layer: rigor for building. Validate an idea, grill it into a buildable spec, then build and deploy it, inside the agent you already use. BYOK, no telemetry.",
   "license": "MIT",
   "author": "Hobocode LLC <jerm@hobocode.net>",
@@ -65,6 +65,7 @@
     "core/state-file.ts",
     "core/state-ops.ts",
     "core/backend.ts",
+    "core/backend-io.ts",
     "core/scaffold.ts",
     "core/scaffold-io.ts",
     "core/deploy.ts",

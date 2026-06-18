@@ -108,9 +108,17 @@ export interface DeployRecord {
   hasBackend: boolean;
   backendNote: string | null;
   // Provenance of the backend payload from build.json (null for a static build).
-  // The static deploy does not ship a backend; this just records what the build
-  // declared, for the deploy-automation follow-up to read.
   backendKind?: BackendKind | null;
+  // Backend deploy provenance (all optional so static deploy.json records, and
+  // records written before this field set existed, round-trip unchanged). NEVER
+  // a secret value: env vars are recorded by NAME only.
+  backendMode?: "none" | "cli" | "static-only-fallback";
+  functionsShipped?: boolean;
+  functionsDir?: string | null;
+  envVarsSet?: string[]; // names only
+  envVarsMissing?: string[]; // names declared but absent from the deploy environment
+  dbProvisioned?: boolean;
+  schemaApplied?: boolean;
   buildProducer: "agent" | "scaffold" | null;
   stateFile: string | null;
 }

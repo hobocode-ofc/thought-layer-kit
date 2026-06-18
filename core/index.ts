@@ -16,6 +16,7 @@ export * from "./stage-map.ts";
 export * from "./state-file.ts";
 export * from "./state-ops.ts";
 export * from "./backend.ts";
+export * from "./backend-io.ts";
 export * from "./scaffold.ts";
 export * from "./scaffold-io.ts";
 export * from "./deploy.ts";

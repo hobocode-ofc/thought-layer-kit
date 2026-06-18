@@ -57,9 +57,9 @@ If all three are no, build **static, full stop.** localStorage, static data file
 - **A names-only `.env.example`** at the project root listing every variable the backend reads (`DATABASE_URL` plus any others), each as a bare `NAME=` under a one-line comment. Never write a real value; real values live only in the host environment.
 - **An updated `netlify.toml`.** Extend the existing publish + redirect block (do not replace it) with a `[functions]` table declaring `directory = "netlify/functions"`. Keep the static publish dir and the SPA redirect intact.
 - **A `BACKEND.md` deploy guide** at the project root: what is in the repo, the honest status (automated backend deploy is a follow-up, so `tl deploy` ships only the front end today), how to provision Neon, the env-var table, the function-to-R-ID table, and the manual `netlify deploy` steps. The kit's `renderBackendGuide` and `renderEnvExample` helpers (in `core/backend.ts`) produce a dash-free skeleton if you have the core available; otherwise write the same content by hand.
-- **A project `.gitignore`** that ignores `.env` and `.env.*` but un-ignores the contract with `!.env.example`. Without that line the env contract is silently un-committable, and the deploy follow-up cannot read it.
+- **A project `.gitignore`** that ignores `.env` and `.env.*` but un-ignores the contract with `!.env.example`. Without that line the env contract is silently un-committable, and the deploy step cannot read it.
 
-Then record the backend in the manifest's `backend` block (shape below). Do **not** attempt to deploy the backend in this step: `tl deploy` publishes the static front end, and backend deploy automation is the explicit follow-up. Say so plainly in chat and point the user at `BACKEND.md`.
+Then record the backend in the manifest's `backend` block (shape below). Do **not** attempt to deploy in this step. The deploy is the next step: `tl deploy` (or the **thought-layer-deploy** skill) reads this `backend` block and ships the functions plus the declared env var names via the user's Netlify CLI into their own account, with `DATABASE_URL` bring-your-own by default. Point the user at `BACKEND.md` for the details and the opt-in database steps.
 
 ## SEO and discoverability (build all of it, do not skip it)
 

@@ -270,3 +270,49 @@ export function normalizeBackendMeta(raw: unknown): BackendMeta | null {
     guide: str(r["guide"], "BACKEND.md"),
   };
 }
+
+// ---- deploy planning (pure; the deploy step's node IO consumes these) --------
+
+// One environment variable the deploy will set on the user's site, expressed as
+// NAME + policy only. There is deliberately no value field: the deploy reads the
+// value from its own process.env at run time and never carries it through here.
+export interface EnvVarPlanItem {
+  name: string;
+  scopes: string[]; // Netlify env scopes; functions need "functions", builds keep "builds"
+  isSecret: boolean; // mark connection strings / keys / tokens as secret in the Netlify API
+  context: string; // Netlify deploy context the value applies to
+}
+
+// Names that should be marked secret on Netlify (write-only there). A coarse,
+// safe-by-default match: anything that looks like a credential is secret.
+const SECRET_NAME_RE = /(KEY|SECRET|TOKEN|PASSWORD|PASSWD|DATABASE_URL|DB_URL|CONN|DSN|CREDENTIAL|PRIVATE|AUTH)/;
+
+function looksSecret(name: string): boolean {
+  return SECRET_NAME_RE.test(name.toUpperCase());
+}
+
+// Plan the env vars to push: the backend's declared names plus the database
+// connection var, deduped and sorted (via dedupeSortEnv, so names are sanitized
+// the same way the .env.example is). Names + policy only, never values.
+export function planEnvVars(backend: BackendMeta): EnvVarPlanItem[] {
+  const dbVar = backend.database?.envVar ? backend.database.envVar : "";
+  const merged: EnvVarSpec[] = [
+    ...(backend.envVars || []),
+    ...(dbVar ? [{ name: dbVar, required: true, description: "" }] : []),
+  ];
+  return dedupeSortEnv(merged).map((v) => ({
+    name: v.name,
+    scopes: ["builds", "functions"],
+    isSecret: looksSecret(v.name),
+    context: "all",
+  }));
+}
+
+export interface FunctionsPlan {
+  functionsDir: string; // relative dir from build.json (e.g. "netlify/functions")
+  runtime: string; // Netlify function runtime; serverless TypeScript bundles as "js"
+}
+
+export function planFunctions(backend: BackendMeta): FunctionsPlan {
+  return { functionsDir: backend.functionsDir || "netlify/functions", runtime: "js" };
+}

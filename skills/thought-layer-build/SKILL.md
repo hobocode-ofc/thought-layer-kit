@@ -95,4 +95,4 @@ Write three files with your own file tools (the manifest is NOT a `tl_state` art
 
 ## Persisting
 
-The build output and the three files live on disk; the portable `state.json` stays focused on validation and design. The only optional state touch is a best-effort cursor bump - `tl_state cursor` (or `tl cursor`) with `{ "backboneStage": 15, "phase": "built" }` - pure provenance; if the tool is absent or it fails, the build still succeeded. Tell the user where the artifact is (`<publishDir>`) and that the next step is the deploy (Phase 4, `/tl-deploy`, coming) which reads `build.json`.
+The build output and the three files live on disk; the portable `state.json` stays focused on validation and design. The only optional state touch is a best-effort cursor bump - `tl_state cursor` (or `tl cursor`) with `{ "backboneStage": 15, "phase": "built" }` - pure provenance; if the tool is absent or it fails, the build still succeeded. Tell the user where the artifact is (`<publishDir>`) and that the next step is the deploy - the **thought-layer-deploy** skill (`/tl-deploy`) or the `deploy` tool / `tl deploy` CLI, which reads `build.json` and takes it live to a URL they own.

@@ -17,3 +17,5 @@ export * from "./state-file.ts";
 export * from "./state-ops.ts";
 export * from "./scaffold.ts";
 export * from "./scaffold-io.ts";
+export * from "./deploy.ts";
+export * from "./deploy-io.ts";

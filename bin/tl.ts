@@ -24,12 +24,14 @@
 import { readFileSync } from "node:fs";
 import { applyStateOp, type StateOp } from "../core/state-ops.ts";
 import { runScaffold } from "../core/scaffold-io.ts";
+import { runDeploy } from "../core/deploy-io.ts";
 
 const HELP = `tl - read/write a portable Thought Layer state file (default: .thought-layer/state.json)
 
   tl read [path] [--json]            where the run stands
   tl list [dir]                      list the state files under .thought-layer/ (juggle several ideas)
   tl scaffold [--out dist] [--domain x.com] [--founder "Name"]  deterministic deployable static site from the spec + brand
+  tl deploy [--dry-run] [--anonymous] [--name x] [--site id]  take build.json's publish dir live to a user-owned Netlify URL
   tl export [path]                   handoff check
   tl answer <qId> <value> [path]     record an answer
   tl feedback --data '<json>'        record a panel verdict ({qId,mode,personas,endState,round})
@@ -118,6 +120,26 @@ function main(): void {
     if (flags["json"]) console.log(JSON.stringify(r.details, null, 2));
     else console.log(r.message);
     process.exit(r.ok ? 0 : 1);
+  }
+
+  // deploy takes the build output live; it is async (Netlify API / CLI), so it
+  // resolves before exiting rather than returning synchronously like the ops.
+  if (args[0] === "deploy") {
+    runDeploy(
+      {
+        path: typeof flags["path"] === "string" ? flags["path"] : undefined,
+        dryRun: flags["dry-run"] === true,
+        anonymous: flags["anonymous"] === true,
+        siteName: typeof flags["name"] === "string" ? flags["name"] : undefined,
+        siteId: typeof flags["site"] === "string" ? flags["site"] : undefined,
+      },
+      { deployedAt: new Date().toISOString() },
+    ).then((r) => {
+      if (flags["json"]) console.log(JSON.stringify(r.details, null, 2));
+      else console.log(r.message);
+      process.exit(r.ok ? 0 : 1);
+    });
+    return;
   }
 
   let payload: StateOp;

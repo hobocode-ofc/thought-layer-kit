@@ -9,7 +9,7 @@ import {
   aggregateConfidence, statusFromConfidence, gradeFromConfidence,
   checkDomains, registrarSearchUrl,
   computeProjection, fmtMoney,
-  applyStateOp, runScaffold,
+  applyStateOp, runScaffold, runDeploy,
   type Assumptions, type StateOp,
 } from "../core/index.ts";
 
@@ -200,6 +200,36 @@ export default function (pi: ExtensionAPI) {
     async execute(_id, params): Promise<ToolResult> {
       const p = params as { path?: string; outDir?: string; domain?: string; founder?: string };
       const r = runScaffold({ path: p.path, outDir: p.outDir, domain: p.domain, founderName: p.founder }, { builtAt: new Date().toISOString() });
+      return text(r.message, r.details);
+    },
+  });
+
+  // deploy: take the build output (read from build.json's publishDir) live to a
+  // user-owned URL. Two models, both keeping ownership with the user and nothing
+  // phoning a central account: a BYO Netlify token (NETLIFY_AUTH_TOKEN, deploys
+  // into their own account via the file-digest API) or, with no token, the
+  // Netlify CLI's own --allow-anonymous flow for a 1-hour claimable URL. The
+  // token is read ONLY from the environment (BYOK), never passed as a parameter.
+  pi.registerTool({
+    name: "deploy",
+    label: "Thought Layer: deploy",
+    description:
+      "Take the built site live to a user-owned URL. Reads build.json (publishDir/entry) next to the state file, then deploys to Netlify. " +
+      "Two models, both BYOK with no lock-in: with NETLIFY_AUTH_TOKEN set (read from the environment only, never a parameter) it deploys into the user's OWN account via the file-digest API (no zip); with no token it uses the Netlify CLI's --allow-anonymous flow for an instant live URL plus a one-hour claim link. " +
+      "Run the build first (thought-layer-build / tl_scaffold). Use dryRun:true to preview the file plan with no network call. Static-first: if build.json has hasBackend:true it warns that only the front end ships this way.",
+    parameters: Type.Object({
+      path: Type.Optional(Type.String({ description: "State file (or project dir) whose build.json to deploy. Defaults to ./.thought-layer/state.json; honors a named file." })),
+      dryRun: Type.Optional(Type.Boolean({ description: "Plan only: walk the publish dir and report the files + target, with no network call or CLI spawn." })),
+      anonymous: Type.Optional(Type.Boolean({ description: "Force the no-account path (Netlify CLI --allow-anonymous) even if a token is set. Default: token path when NETLIFY_AUTH_TOKEN is set, else anonymous." })),
+      siteName: Type.Optional(Type.String({ description: "Token path only: create the site under this name (a-z0-9-). Omit to let Netlify assign a random subdomain." })),
+      siteId: Type.Optional(Type.String({ description: "Token path only: re-deploy to an existing site id instead of creating a new one." })),
+    }),
+    async execute(_id, params): Promise<ToolResult> {
+      const p = params as { path?: string; dryRun?: boolean; anonymous?: boolean; siteName?: string; siteId?: string };
+      const r = await runDeploy(
+        { path: p.path, dryRun: p.dryRun, anonymous: p.anonymous, siteName: p.siteName, siteId: p.siteId },
+        { deployedAt: new Date().toISOString() },
+      );
       return text(r.message, r.details);
     },
   });

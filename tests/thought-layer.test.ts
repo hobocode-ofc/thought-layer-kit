@@ -33,7 +33,7 @@ beforeAll(() => {
 
 describe("thought-layer Pi extension", () => {
   it("loads its factory and registers the deterministic tools", () => {
-    expect(Object.keys(tools).sort()).toEqual(["tl_domains", "tl_project", "tl_scaffold", "tl_score", "tl_state"]);
+    expect(Object.keys(tools).sort()).toEqual(["deploy", "tl_domains", "tl_project", "tl_scaffold", "tl_score", "tl_state"]);
   });
 
   it("tl_score returns the exact band + grade", async () => {

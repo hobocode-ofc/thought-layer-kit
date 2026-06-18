@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .pi/
+.thought-layer/
 *.log
 .DS_Store
 .env

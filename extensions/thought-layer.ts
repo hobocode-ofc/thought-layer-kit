@@ -9,7 +9,8 @@ import {
   aggregateConfidence, statusFromConfidence, gradeFromConfidence,
   checkDomains, registrarSearchUrl,
   computeProjection, fmtMoney,
-  type Assumptions,
+  applyStateOp,
+  type Assumptions, type StateOp,
 } from "../core/index.ts";
 
 const text = (t: string, details?: Record<string, unknown>): ToolResult => ({
@@ -123,6 +124,59 @@ export default function (pi: ExtensionAPI) {
         `Ending MRR: ${fmtMoney(s.endingMRR, cur)}`,
       ].join("\n");
       return text(`Projection summary:\n${body}`, { summary: s });
+    },
+  });
+
+  // tl_state: read, update, and write the portable Thought Layer state file
+  // (.thought-layer/state.json) so a co-founder using the web app and an agent
+  // share ONE lossless file. This owns the feedback-envelope assembly and
+  // artifact normalization, so the model supplies prose + numbers and never
+  // hand-writes the JSON (the main way the file gets corrupted).
+  const SuggestionSchema = Type.Object({
+    id: Type.Optional(Type.String()),
+    summary: Type.Optional(Type.String()),
+    patch: Type.Optional(Type.String()),
+  });
+  const PersonaSchema = Type.Object({
+    persona: Type.String({ description: "redteam | expert | investor, or the single chosen persona key." }),
+    assessment: Type.Optional(Type.String()),
+    confidence: Type.Number({ description: "0 to 1, this persona's confidence." }),
+    confidenceRationale: Type.Optional(Type.String()),
+    suggestions: Type.Optional(Type.Array(SuggestionSchema)),
+  });
+  pi.registerTool({
+    name: "tl_state",
+    label: "Thought Layer: state",
+    description:
+      "Read, update, and write the portable Thought Layer progress file (.thought-layer/state.json) shared with the web app so work passes losslessly between a founder in the browser and an agent. " +
+      "ops: 'read' (resume: where the run stands), 'answer' (record a question answer), 'feedback' (record a panel verdict - pass it the per-persona prose + confidences and it builds the exact entry), " +
+      "'artifact' (store prd/grill/bizModel/naming/brand/etc., requirements auto-normalized), 'cursor' (save resume position), 'park' (stash a panel note with no web-app question), 'export' (report the current file for handoff). " +
+      "Always use this instead of writing the JSON by hand.",
+    parameters: Type.Object({
+      op: Type.Union([
+        Type.Literal("read"), Type.Literal("answer"), Type.Literal("feedback"),
+        Type.Literal("artifact"), Type.Literal("cursor"), Type.Literal("park"), Type.Literal("export"),
+      ], { description: "The operation to perform." }),
+      path: Type.Optional(Type.String({ description: "Project dir or .json path. Defaults to ./.thought-layer/state.json in the cwd." })),
+      qId: Type.Optional(Type.String({ description: "Question id (for 'answer'/'feedback'). Must be a real Thought Layer question id." })),
+      value: Type.Optional(Type.Unknown({ description: "For 'answer': the answer string. For 'artifact': the artifact object." })),
+      artifact: Type.Optional(Type.String({ description: "For 'artifact': one of bizModel, grill, assets, research, swot, prd, naming, brand." })),
+      mode: Type.Optional(Type.String({ description: "For 'feedback': 'panel' (3 personas) or a single persona key." })),
+      personas: Type.Optional(Type.Array(PersonaSchema, { description: "For 'feedback': one entry per persona with its assessment + confidence." })),
+      endState: Type.Optional(Type.String({ description: "For 'feedback': 'open' (still iterating), 'pass' (cleared 0.85), or 'setAside' (frozen with to-dos)." })),
+      round: Type.Optional(Type.Number({ description: "For 'feedback': which feedback round this is (default 1)." })),
+      cursor: Type.Optional(Type.Object({
+        stage: Type.Optional(Type.String()),
+        backboneStage: Type.Optional(Type.Number()),
+        lastQuestionId: Type.Optional(Type.String()),
+        phase: Type.Optional(Type.String()),
+      }, { description: "For 'cursor': the resume position." })),
+      key: Type.Optional(Type.String({ description: "For 'park': a synthetic note key, e.g. 'brand.voice' or 'mr.willingness-to-pay'." })),
+      note: Type.Optional(Type.String({ description: "For 'park': the note to stash under the kit namespace." })),
+    }),
+    async execute(_id, params): Promise<ToolResult> {
+      const r = applyStateOp(params as StateOp, { ts: Date.now(), exportedAt: new Date().toISOString() });
+      return text(r.message, r.details);
     },
   });
 }

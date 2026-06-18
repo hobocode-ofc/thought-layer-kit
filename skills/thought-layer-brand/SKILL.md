@@ -99,4 +99,8 @@ Its finished output feeds back, mapped block by block — one canonical mapping,
 - **The whole kit** receives the **Name**, produced here via `thought-layer-naming` and checked with `tl_domains`.
 - **The design phase (framework Part 3)** receives the **Personality**, the **Voice**, and the **Visual & Identity Direction** as notes for the PRD's UX and identity sections — direction only. This module never drafts the PRD and never grills; the design phase remains the framework's Part 3, **PRD first and the grill second**, and the final logos, palettes, and screens are produced there, not here.
 
+## Persisting (multi-session)
+
+Keep the shared state file current as the brand takes shape (see the framework skill's "Saving and resuming"). Record the brand-feel and what-it-is-not answers against `brand-feel` and `brand-unlike` via the state tool, store the chosen name as the `naming` artifact and the guide as the `brand` artifact (op `artifact`), and leave the final logos, palettes, and screens to the design phase / web app. Sub-stage verdicts with no web-app question (promise, emotional job, personality, voice, visual direction) go to op `park` (a key like `brand.voice`), never into answers. If neither `tl_state` nor `tl` is available, carry the brief in chat.
+
 It takes positioning as input and expresses it; it never sets or relitigates competitive strategy (that is `thought-layer-strategy` and backbone Market Selection), and it never starts the design phase.

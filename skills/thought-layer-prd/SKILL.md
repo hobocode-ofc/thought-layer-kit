@@ -36,3 +36,7 @@ Write in clear prose with markdown headings:
 - Make the success metrics honest outcomes, not vanity: draft a north-star metric tied to delivered customer value (one that moves only when customers get the promised outcome), at least one counter-metric it could break, and a leading plus lagging pair. The grill holds these to its metric-honesty rule.
 
 Output only the markdown document, no preamble.
+
+## Persisting (multi-session)
+
+After composing the draft, save it to the shared state file so it survives the session and round-trips to the web app and any co-founder, rather than living only in chat. Store it via the state tool: `tl_state` op `artifact` with `artifact: "prd"` and `{ markdown, glossary, requirements, weakestAssumptions }` (or the CLI `tl artifact prd --data '<json>'`). Each requirement may carry `statement` for its wording; the tool remaps that to the web app's `text` field for you. If neither `tl_state` nor `tl` is available, just output the markdown. See the framework skill's "Saving and resuming."

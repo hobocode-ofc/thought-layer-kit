@@ -56,6 +56,10 @@ Update the draft PRD in place, keeping two living artifacts inside it current:
 
 When the grilling is complete, the hardened PRD — with its sharpened glossary and completed requirements — is the build brief the build step consumes.
 
+## Persisting (multi-session)
+
+Keep the shared state file current as you harden the PRD, so the work survives the session and round-trips to the web app and a co-founder. Store the grill artifact via the state tool: `tl_state` op `artifact` with `artifact: "grill"` and `{ transcript, requirements, glossary, done, doneSummary }` (or `tl artifact grill --data '<json>'`); each requirement carries `statement`, which the tool remaps to the web app's `text`. When the grill is done, re-compose the hardened glossary + requirements into the PRD prose and store that too (`artifact: "prd"`), so an imported file shows the hardened spec, not the stale draft. If neither `tl_state` nor `tl` is available, just keep the PRD updated in chat. See the framework skill's "Saving and resuming."
+
 ## Credit
 
 The "grill" — a relentless, one-question-at-a-time interview that grills an existing plan, sharpens the domain glossary, and surfaces contradictions, updating the doc inline as decisions crystallize — is inspired by Matt Pocock's [`grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/engineering/grill-with-docs/SKILL.md) skill (MIT, © Matt Pocock). His grills an architecture plan against the existing domain model and docs; this skill adapts the same technique to grill a draft PRD against the domain and harden it inline. Thank you, Matt.

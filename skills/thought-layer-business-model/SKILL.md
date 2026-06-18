@@ -105,3 +105,7 @@ Its finished output feeds back into the backbone, mapped block by block — one 
 - **Scale Expectations (stage 8)** receives the **scenario projections** as an evidence anchor, alongside market-research's SOM; the two reconcile (scenario year-one revenue should sit inside the winnable SOM) and the 12-month and 3-year calls stay the founder's.
 
 It never drafts the PRD and never grills; the design phase remains the framework's Part 3, PRD first and the grill second.
+
+## Persisting (multi-session)
+
+Keep the shared state file current as the model firms up (see the framework skill's "Saving and resuming"). Record the deepened answers against their web-app question ids via the state tool — Costs to `cost-architecture`/`cost-risk`, Pricing to `pricing-model`, the parties to `bm-who-buys`/`bm-who-supplies`/`bm-parties` — and store the numeric model (the `tl_project` output and its assumptions) as the `bizModel` artifact (op `artifact`). Sub-stage verdicts with no web-app question (money flow, unit economics, cost stress, scenarios) go to op `park` (a key like `bm.unit-economics`), never into answers. If neither `tl_state` nor `tl` is available, carry the model in chat.

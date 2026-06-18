@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import extension from "../extensions/thought-layer.ts";
 
 // Load the Pi extension with a mock `pi` and capture what it registers. This
@@ -29,8 +32,8 @@ beforeAll(() => {
 });
 
 describe("thought-layer Pi extension", () => {
-  it("loads its factory and registers the three deterministic tools", () => {
-    expect(Object.keys(tools).sort()).toEqual(["tl_domains", "tl_project", "tl_score"]);
+  it("loads its factory and registers the deterministic tools", () => {
+    expect(Object.keys(tools).sort()).toEqual(["tl_domains", "tl_project", "tl_score", "tl_state"]);
   });
 
   it("tl_score returns the exact band + grade", async () => {
@@ -60,5 +63,54 @@ describe("thought-layer Pi extension", () => {
     const r = await tools.tl_domains!.execute("t", { slug: "acmedispatch" });
     expect(r.content[0]!.text).toContain("instantdomainsearch.com");
     expect(r.details!.hasKey).toBe(false);
+  });
+});
+
+describe("tl_state tool (end to end against a temp file)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "tl-tool-"));
+
+  it("read on a fresh dir reports no file yet", async () => {
+    const r = await tools.tl_state!.execute("t", { op: "read", path: dir });
+    expect(r.details!.exists).toBe(false);
+    expect(r.content[0]!.text).toContain("Start a fresh run");
+  });
+
+  it("records an answer, a passing panel verdict, and a PRD artifact, then resumes", async () => {
+    await tools.tl_state!.execute("t", { op: "answer", path: dir, qId: "what-statement", value: "a dispatch tool for HVAC crews" });
+
+    const fb = await tools.tl_state!.execute("t", {
+      op: "feedback", path: dir, qId: "what-statement", mode: "panel", endState: "pass",
+      personas: [
+        { persona: "redteam", assessment: "narrow but clear", confidence: 0.86, suggestions: [{ summary: "name the wedge" }] },
+        { persona: "expert", assessment: "sound", confidence: 0.88 },
+        { persona: "investor", assessment: "fundable", confidence: 0.9 },
+      ],
+    });
+    // mean 0.88 -> green, grade B, and a genuine pass is NOT overridden
+    expect(fb.details!.status).toBe("green");
+    expect(fb.details!.grade).toBe("B");
+
+    // requirements with the kit's `statement` field get remapped to `text`
+    await tools.tl_state!.execute("t", {
+      op: "artifact", path: dir, artifact: "prd",
+      value: { markdown: "# PRD", requirements: [{ id: "r1", category: "functional", statement: "must dispatch" }] },
+    });
+
+    const read = await tools.tl_state!.execute("t", { op: "read", path: dir });
+    const state = read.details!.state as {
+      answers: Record<string, string>;
+      feedback: Record<string, { overridden: boolean; status: string }>;
+      prd: { requirements: Array<{ text?: string; statement?: string }> };
+    };
+    expect(state.answers["what-statement"]).toContain("HVAC");
+    expect(state.feedback["what-statement"]!.overridden).toBe(false); // pass, not set-aside
+    expect(state.prd.requirements[0]!.text).toBe("must dispatch");
+    expect(state.prd.requirements[0]!.statement).toBeUndefined();
+    expect((read.details!.summary as { answered: number }).answered).toBe(1);
+  });
+
+  it("rejects an answer to a non-answerable qId via the tool error path", async () => {
+    const r = await tools.tl_state!.execute("t", { op: "answer", path: dir, qId: "prd-grill", value: "nope" });
+    expect(r.content[0]!.text).toMatch(/tl_state error|not an answerable/);
   });
 });

@@ -103,3 +103,7 @@ Its finished output feeds back into the backbone, mapped block by block — one 
 - **Pricing (stage 9)** receives the **Willingness to Pay** evidence — the anchors, not the final number.
 
 The **SOM** additionally anchors backbone stage 8 (Scale Expectations), and **Channels** additionally feeds backbone stage 11 (Customer Acquisition) as reachability evidence. It never drafts the PRD and never grills; the design phase remains the framework's Part 3, PRD first and the grill second.
+
+## Persisting (multi-session)
+
+This deep-dive runs across sessions, so keep the shared state file current (see the framework skill's "Saving and resuming"). When the evidence feeds back to a backbone stage, record that answer against its web-app question id via the state tool — Validation to `evidence`/`paid-today`, Market Selection to `target-market`/`incumbent-gap`, Pricing to `pricing-model` — and store the write-up as the `research` artifact (op `artifact`). The module's own sub-stage verdicts (ICP, sizing, WTP, and the rest) have no web-app question: stash them with op `park` (a key like `mr.willingness-to-pay`), never in answers. If neither `tl_state` nor `tl` is available, just carry the evidence ledger in chat.

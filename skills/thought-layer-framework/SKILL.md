@@ -20,6 +20,43 @@ Then walk the stages below **in order, one stage per turn**. For each stage:
 
 Reaching the Grill or the PRD before all of Part 1 (validate the idea) and Part 2 (the business model) are worked through is the signature failure of this framework. Do not do it. The Grill and the PRD are the design phase and they come last.
 
+## Saving and resuming (this runs across many sessions)
+
+No one finishes this in one sitting. The work lives in a portable file, `.thought-layer/state.json`, in the project directory. It is your memory across turns and sessions, and it is the SAME interop file the web app reads, so a founder can answer some stages here and hand the file to a co-founder who continues in the web app (weareallproductmanagersnow.com, "Load progress from file"), back and forth, losslessly. Never hand-write this JSON: use the tool below, which builds the exact shapes the web app expects.
+
+**The tool.** If the `tl_state` tool is available (Pi), use it. Otherwise run the CLI from any shell: `npx -y @hobocode/thought-layer tl <op> ...` (or just `tl ...` if the package is installed). Ops: `read`, `answer`, `feedback`, `artifact`, `cursor`, `park`, `export`.
+
+**On start, ALWAYS read first.** `tl_state read` (or `tl read`). If a file exists, summarize where the run stands and **resume from the saved cursor** - do not restart at stage 1. If not, start fresh; the file is created on first write.
+
+**After each stage:**
+1. Record the answer against its question id: `tl_state` op `answer` (or `tl answer <qId> "<value>"`).
+2. Record the panel verdict: `tl_state` op `feedback` - pass it the per-persona assessments + confidences and the end state (`pass` when confidence clears 0.85, `setAside` when the user sets it aside with to-dos, else `open`). The tool computes the status, grade, and to-dos; you supply only prose + numbers.
+3. Save the cursor: `tl_state` op `cursor` with the backbone stage number and phase, so the next session resumes exactly here.
+
+**Stage to question id** (use these exact ids; the tool rejects unknown ones):
+
+| Stage | id(s) |
+|---|---|
+| 1 Concise What | `what-statement` |
+| 2 Domain Knowledge | `domain-experience`, `domain-gaps` |
+| 3 Validation | `paid-today`, `evidence` |
+| 4 Market Selection | `target-market`, `incumbent-gap` |
+| 5 30-Second Test | `pitch` |
+| 6 Time | `commitment` |
+| 7 Costs | `cost-architecture`, `cost-risk` |
+| 8 Scale | `realistic-goal` |
+| 9 Pricing | `pricing-model` |
+| 10 Business Model | `bm-who-buys`, `bm-who-supplies`, `bm-parties` (+ `bizModel` artifact) |
+| 11 Customer Acquisition | `first-ten`, `retention` |
+| 12 Customer Relationships | `crm-approach`, `crm-community` |
+| 13 Support | `support-model`, `support-scaling` |
+| 14 PRD | `prd-problem`, `prd-not-building` (+ `prd` artifact) |
+| 15 Grill | `grill` artifact (re-compose `prd` markdown on done) |
+
+**Artifacts** (PRD, grill, bizModel, naming, brand, swot, research) go through op `artifact`, which normalizes them to the web app's shapes. **Web-app-only fields** - the Decision Support questions (`dq-*`), the press-release fields, and the launch-asset fields - have no stage here; leave them for the founder in the web app, do not write them. **Module sub-stage verdicts** that have no web-app question (the deep-dive modules' internal stages) go to op `park`, never into answers.
+
+**At session end or handoff,** run `export` to confirm the file is current, and tell the founder where it is and that they (or a collaborator) can load it into the web app or keep going with the agent.
+
 ## Part 1: Validate the idea
 
 Altitude: is the idea clear, honest, real, and worth pursuing? Not how it will be built.

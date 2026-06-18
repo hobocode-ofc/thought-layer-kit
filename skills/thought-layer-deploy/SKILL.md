@@ -1,6 +1,6 @@
 ---
 name: thought-layer-deploy
-description: "Take the built site live to a user-owned URL with no lock-in, the last step after the build. Reads .thought-layer/build.json (the publish dir + entry) next to the state file, then deploys to Netlify by one of two BYOK models: with NETLIFY_AUTH_TOKEN set it deploys into the user's OWN account via the file-digest API (owned immediately, no claim), and with no token it delegates to the user's Netlify CLI (logged in: a new site in their account; logged out: an anonymous, claimable URL with a one-hour claim link). Static-first: if build.json says hasBackend it warns that only the front end ships this way. Prefers the deploy tool (Pi) or the tl deploy CLI (any shell agent) so the deploy is one mechanical, honest step, never hand-rolled. Run it after thought-layer-build (or tl_scaffold) has produced build.json."
+description: "Take the built site live to a user-owned URL with no lock-in, the last step after the build. Reads .thought-layer/build.json (the publish dir + entry) next to the state file, then deploys to Netlify by one of two BYOK models: with NETLIFY_AUTH_TOKEN set it deploys into the user's OWN account via the file-digest API (owned immediately, no claim), and with no token it delegates to the user's Netlify CLI (logged in: a new site in their account; logged out: an anonymous, claimable URL with a one-hour claim link). Static-first: if build.json says hasBackend, the build also emitted a backend (functions, schema.sql, a names-only .env.example, BACKEND.md), but backend deploy automation is a follow-up, so this step ships only the front end for now and points at BACKEND.md. Prefers the deploy tool (Pi) or the tl deploy CLI (any shell agent) so the deploy is one mechanical, honest step, never hand-rolled. Run it after thought-layer-build (or tl_scaffold) has produced build.json."
 ---
 
 # Deploy it: the build goes live to a URL you own
@@ -35,7 +35,7 @@ If neither a token nor a usable CLI is available, relay the tool's guidance hone
 
 ## Static-first honesty
 
-The default deploy publishes a **static** publish directory. If `build.json.hasBackend` is `true`, the tool warns and you must repeat it plainly: only the front end goes live this way; the server part needs serverless functions or a separate host. Do not imply a backend is running when it is not.
+The default deploy publishes a **static** publish directory. If `build.json.hasBackend` is `true`, the build also emitted a real backend (serverless functions, a `schema.sql`, a names-only `.env.example`, an updated `netlify.toml`, and a `BACKEND.md` guide), but **backend deploy automation is a follow-up**, so this step ships only the front end for now. The tool warns; repeat its guidance plainly and point the user at `BACKEND.md`. To run the backend they provision Neon Postgres, set `DATABASE_URL` (and the other names from `.env.example`) in their host environment, then run `netlify deploy` with the functions present. Do not imply a backend is running when it is not.
 
 ## After it is live
 

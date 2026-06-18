@@ -11,7 +11,9 @@ follow from that.
   (`THOUGHT_LAYER_DOMAIN_KEY` / `RAPIDAPI_KEY`) are read from `process.env`. They
   are never accepted as tool or CLI parameters, never logged or printed, and
   never written to disk. The `deploy.json` record stores the resulting URLs and
-  ids, never the token.
+  ids, never the token. When a build emits a backend, the generated `.env.example`
+  is a names-only contract (every line is a bare `NAME=`): real values live only
+  in the host environment, never in a committed file.
 - **Deploys go to your own account.** With a token, the deploy uses Netlify's
   file-digest API to publish into your account. With no token, it delegates to
   your installed Netlify CLI (a site in your account when logged in, or an

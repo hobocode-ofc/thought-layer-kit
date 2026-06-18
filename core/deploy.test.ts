@@ -82,13 +82,14 @@ describe("deployRecord", () => {
     const rec = deployRecord({
       deployedAt: "2026-06-17T00:00:00.000Z", mode: "dry-run", publishDir: "dist", fileCount: 3,
       url: null, adminUrl: null, claimUrl: null, siteId: null, deployId: null,
-      hasBackend: false, backendNote: null, buildProducer: "scaffold", stateFile: "/x/.thought-layer/state.json",
+      hasBackend: false, backendNote: null, backendKind: null, buildProducer: "scaffold", stateFile: "/x/.thought-layer/state.json",
     });
     expect(rec.app).toBe("thought-layer");
     expect(rec.kind).toBe("deploy");
     expect(rec.version).toBe(1);
     expect(rec.provider).toBe("netlify");
     expect(rec.mode).toBe("dry-run");
+    expect(rec.backendKind).toBeNull();
   });
 });
 
@@ -112,6 +113,35 @@ describe("runDeploy dry run", () => {
     expect((r.details["files"] as string[]).sort()).toEqual(["/index.html", "/robots.txt"]);
     // dry run never writes a deploy.json record.
     expect(existsSync(join(root, ".thought-layer", "deploy.json"))).toBe(false);
+  });
+
+  it("points at BACKEND.md and the env/DB checklist when build.json has a backend", async () => {
+    const root = mkdtempSync(join(tmpdir(), "tl-deploy-"));
+    mkdirSync(join(root, ".thought-layer"), { recursive: true });
+    mkdirSync(join(root, "dist"), { recursive: true });
+    writeFileSync(join(root, ".thought-layer", "state.json"), JSON.stringify({ app: "thought-layer", state: {} }));
+    writeFileSync(
+      join(root, ".thought-layer", "build.json"),
+      JSON.stringify({
+        app: "thought-layer", kind: "build", version: 1, producer: "agent", publishDir: "dist", entry: "index.html",
+        hasBackend: true, backendNote: "needs a server-enforced rule",
+        backend: {
+          backendKind: "serverless", functionsDir: "netlify/functions", runtime: "nodejs20.x", nodeVersion: "20",
+          envVars: [{ name: "DATABASE_URL", required: true, description: "Neon Postgres connection string" }],
+          database: { provider: "neon", schemaFile: "schema.sql", envVar: "DATABASE_URL" }, guide: "BACKEND.md",
+        },
+      }),
+    );
+    writeFileSync(join(root, "dist", "index.html"), "<!doctype html><title>x</title>");
+
+    const r = await runDeploy({ path: join(root, ".thought-layer", "state.json"), dryRun: true }, { deployedAt: "2026-06-18T00:00:00.000Z" });
+    expect(r.ok).toBe(true);
+    expect(r.details["hasBackend"]).toBe(true);
+    // the static deploy still plans normally; the message carries the actionable backend follow-up
+    expect(r.message).toContain("BACKEND.md");
+    expect(r.message).toContain("DATABASE_URL");
+    expect(r.message).toContain("follow-up");
+    expect(r.message).toContain("netlify deploy");
   });
 
   it("errors clearly when build.json is missing", async () => {

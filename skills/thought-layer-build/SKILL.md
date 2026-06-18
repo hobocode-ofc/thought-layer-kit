@@ -1,6 +1,6 @@
 ---
 name: thought-layer-build
-description: "Turn the hardened PRD into a static-first, deploy-ready artifact, built directly by this agent. Reads the build brief from the shared state file (PRD, glossary, R-ID requirements, brand, business context, open to-dos), then builds a self-contained site or a Vite/static build that yields a predictable publish directory (dist/), honoring ubiquitous language, R-ID traceability, the out-of-scope list, mobile+desktop, brand, and the full SEO/discoverability layer. Escalates to a backend only when the spec genuinely requires server-side, and flags loudly that the default deploy path is static. Verifies the build runs and writes a .thought-layer/build.json manifest for the deploy step. Run it after the grill has hardened the PRD; it is a standalone build step, not a validation stage."
+description: "Turn the hardened PRD into a static-first, deploy-ready artifact, built directly by this agent. Reads the build brief from the shared state file (PRD, glossary, R-ID requirements, brand, business context, open to-dos), then builds a self-contained site or a Vite/static build that yields a predictable publish directory (dist/), honoring ubiquitous language, R-ID traceability, the out-of-scope list, mobile+desktop, brand, and the full SEO/discoverability layer. When the spec genuinely requires a server, it also emits a real backend (serverless functions under netlify/functions/, a schema.sql, a names-only .env.example, an updated netlify.toml, and a BACKEND.md guide) and records it in the manifest, while staying honest that backend deploy automation is a follow-up so the default deploy path stays static. Verifies the build runs and writes a .thought-layer/build.json manifest for the deploy step. Run it after the grill has hardened the PRD; it is a standalone build step, not a validation stage."
 ---
 
 # Build it: the hardened PRD becomes a deploy-ready artifact
@@ -49,7 +49,17 @@ Default to a self-contained static site or a Vite/Astro/static build whose outpu
 
 If all three are no, build **static, full stop.** localStorage, static data files, BYOK client-side AI calls, and third-party embeddable widgets do **not** count as a backend - many specs that sound like they need a server can ship a compelling static slice first.
 
-**When a backend is genuinely required:** build the static parts anyway, set `hasBackend: true` + `backendNote` in the manifest, and **warn loudly** in chat: the default deploy publishes a static `dist/` to Netlify, so the server part will not deploy that way and needs serverless functions or a separate host. Build the static shell with a clear seam for the backend.
+**When a backend is genuinely required, build it for real (do not just warn).** Build the static front end as above, set `hasBackend: true` and a one-line `backendNote`, and emit a coherent, buildable serverless backend alongside it:
+
+- **Serverless functions, one per backend R-ID**, under `netlify/functions/`. Name each file in the ubiquitous language (the glossary term for what it does, e.g. `netlify/functions/dispatch.ts`), open it with a comment naming the R-ID it implements, and keep it inside the out-of-scope boundary. Each function reads its inputs, talks to the database, and returns JSON. Give the front end a clear seam: it calls the function at `fetch('/.netlify/functions/<name>')`, never a hardcoded host.
+- **A `schema.sql`** at the project root, derived from the PRD data requirements and the domain entities. Name tables and columns in the glossary terms (no synonyms), and keep it idempotent where you can (`create table if not exists ...`).
+- **Neon Postgres by default.** The functions reach the database through the Neon serverless driver (`@neondatabase/serverless`, added to the product's `package.json`, never the kit's) and read the connection string from `DATABASE_URL` (Netlify sets `NETLIFY_DATABASE_URL` when you provision managed Neon, so read `DATABASE_URL` and map it). Neon is the single documented default and is overridable to any Postgres by pointing `DATABASE_URL` elsewhere; state that in `BACKEND.md` and do not invent a second provider.
+- **A names-only `.env.example`** at the project root listing every variable the backend reads (`DATABASE_URL` plus any others), each as a bare `NAME=` under a one-line comment. Never write a real value; real values live only in the host environment.
+- **An updated `netlify.toml`.** Extend the existing publish + redirect block (do not replace it) with a `[functions]` table declaring `directory = "netlify/functions"`. Keep the static publish dir and the SPA redirect intact.
+- **A `BACKEND.md` deploy guide** at the project root: what is in the repo, the honest status (automated backend deploy is a follow-up, so `tl deploy` ships only the front end today), how to provision Neon, the env-var table, the function-to-R-ID table, and the manual `netlify deploy` steps. The kit's `renderBackendGuide` and `renderEnvExample` helpers (in `core/backend.ts`) produce a dash-free skeleton if you have the core available; otherwise write the same content by hand.
+- **A project `.gitignore`** that ignores `.env` and `.env.*` but un-ignores the contract with `!.env.example`. Without that line the env contract is silently un-committable, and the deploy follow-up cannot read it.
+
+Then record the backend in the manifest's `backend` block (shape below). Do **not** attempt to deploy the backend in this step: `tl deploy` publishes the static front end, and backend deploy automation is the explicit follow-up. Say so plainly in chat and point the user at `BACKEND.md`.
 
 ## SEO and discoverability (build all of it, do not skip it)
 
@@ -67,7 +77,8 @@ Do not declare victory - check:
 2. **Confirm the publish dir + entry load.** `dist/index.html` (or your entry) exists and is non-trivial. Where a preview or browser tool is available, load it and confirm it renders; otherwise inspect the built HTML for the expected title/nav/hero and that the mobile viewport meta is set.
 3. **R-ID coverage.** Walk TRACEABILITY.md: each R-ID is implemented (with a pointer) or explicitly deferred (with a reason). Put the counts in `build.json.requirements`.
 4. **SEO check.** Confirm the SEO files are actually in the publish dir; set `build.json.seo.*` from reality, not intent.
-5. **Report** what is built and what is deferred, plainly, in chat.
+5. **Backend check (only when `hasBackend`).** Each backend R-ID maps to a function in TRACEABILITY.md; `netlify/functions/` has one file per backend R-ID; `.env.example` is values-free (every variable line is a bare `NAME=`, never a value); `schema.sql` is non-empty; `netlify.toml` declares the functions directory; `.gitignore` has `!.env.example`. Do **not** try to run the backend or reach a database here (there is no `DATABASE_URL` in the build env); confirm the artifact is coherent and buildable, not live.
+6. **Report** what is built and what is deferred, plainly, in chat.
 
 ## Honest about being model-built
 
@@ -82,6 +93,7 @@ Write three files with your own file tools (the manifest is NOT a `tl_state` art
 { "app": "thought-layer", "kind": "build", "version": 1, "builtAt": "<ISO>",
   "producer": "agent", "publishDir": "dist", "entry": "index.html",
   "stack": "static|vite|astro|next-static|other", "hasBackend": false, "backendNote": null,
+  "backend": null,
   "buildCommand": null, "installCommand": null, "nodeVersion": "20",
   "provenance": { "stateFile": "<the file you read>", "prdTs": <state.prd.ts>, "grillDone": <bool>, "fromSpeedrun": <bool> },
   "requirements": { "total": 0, "built": 0, "deferred": 0, "deferredIds": [] },
@@ -90,6 +102,17 @@ Write three files with your own file tools (the manifest is NOT a `tl_state` art
   "verified": { "buildRan": true, "publishDirExists": true, "entryLoads": true, "notes": "..." } }
 ```
   `publishDir` + `entry` are load-bearing - the deploy step reads them. (The `tl_scaffold` tool writes this same manifest with `producer: "scaffold"`.)
+
+  When `hasBackend` is `true`, populate `backend` (leave it `null` for a static build). This is the forward-looking contract the backend deploy automation will consume:
+
+```jsonc
+"backend": {
+  "backendKind": "serverless", "functionsDir": "netlify/functions",
+  "runtime": "nodejs20.x", "nodeVersion": "20",
+  "envVars": [{ "name": "DATABASE_URL", "required": true, "description": "Neon Postgres connection string" }],
+  "database": { "provider": "neon", "schemaFile": "schema.sql", "envVar": "DATABASE_URL" },
+  "guide": "BACKEND.md" }
+```
 - `DECISIONS.md` - every choice the spec did not pin down, one line each, with the reason.
 - `TRACEABILITY.md` - the R-ID map. (`SEO.md` comes from the SEO step.)
 

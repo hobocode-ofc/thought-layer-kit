@@ -11,6 +11,7 @@
 // so this emits plain HTML. Pure: no fs, no Date - the caller supplies builtAt.
 
 import type { ProgressState } from "./progress.ts";
+import type { BackendMeta } from "./backend.ts";
 
 export interface StarterSiteSpec {
   brandName: string;
@@ -45,6 +46,11 @@ export interface BuildManifest {
   stack: string;
   hasBackend: boolean;
   backendNote: string | null;
+  // The structured backend payload, present only when the build emitted a real
+  // backend (hasBackend true). Optional + nullable so existing static build.json
+  // files round-trip and the deploy reader tolerates its absence. The deploy
+  // automation follow-up consumes it; today only deploy messaging reads it.
+  backend?: BackendMeta | null;
   buildCommand: string | null;
   installCommand: string | null;
   nodeVersion: string;
@@ -264,6 +270,7 @@ export function scaffoldManifest(
     stack: "static",
     hasBackend: false,
     backendNote: null,
+    backend: null,
     buildCommand: null,
     installCommand: null,
     nodeVersion: "20",

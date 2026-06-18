@@ -103,6 +103,7 @@ describe("scaffoldManifest", () => {
     expect(m.publishDir).toBe("dist");
     expect(m.entry).toBe("index.html");
     expect(m.hasBackend).toBe(false);
+    expect(m.backend).toBeNull(); // a static scaffold never has a backend payload
     expect(m.stack).toBe("static");
     expect(m.kind).toBe("build");
     expect(m.seo.jsonLd).toBe(true);

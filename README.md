@@ -17,7 +17,7 @@ This is open source and BYOK by design. The point is to help people build real t
 - **thought-layer-prd.** Draft the complete PRD — with a first-cut domain glossary and testable requirements — from the validated idea and business model. The plan the grill then hardens.
 - **thought-layer-grill.** The last design step: grills the draft PRD against the domain one question at a time, sharpening the glossary and hardening the requirements inline until it is build-ready. Runs after the PRD, not instead of the framework.
 - **thought-layer-naming.** Name the thing, with rationale and domain-ready slugs.
-- **thought-layer-build.** Build the hardened PRD into a static-first, deploy-ready artifact, verified to run, and leave a manifest the deploy step reads.
+- **thought-layer-build.** Build the hardened PRD into a static-first, deploy-ready artifact, verified to run, and leave a manifest the deploy step reads. When a requirement genuinely needs a server, it also emits a real backend (serverless functions, a `schema.sql`, a names-only `.env.example`, and a `BACKEND.md` guide), with Neon Postgres as the documented default.
 - **thought-layer-deploy.** Take the build live to a URL you own, with no lock-in: a Netlify token deploys into your own account, or the Netlify CLI handles a logged-in or anonymous deploy.
 - **thought-layer-speedrun.** A fast, unranked path to a build-ready spec when you do not need the full panel and score.
 - **Optional deep-dives**, pulled in when you want to go further than the backbone: `thought-layer-strategy`, `thought-layer-brand`, `thought-layer-market-research`, and `thought-layer-business-model`.
@@ -69,6 +69,8 @@ The hosted version of the rigor lives at [weareallproductmanagersnow.com](https:
 - **Done:** the rigor as portable skills; a Pi package with deterministic tools + slash commands; the portable progress file (`tl_state` / the `tl` CLI) shared with the web app; and the speedrun.
 - **Phase 3 (done):** a `build` step that turns the hardened PRD into a deploy-ready artifact, built by your own agent (`/tl-build`), with a deterministic `tl_scaffold` tool that writes an instantly-deployable branded static site as the floor.
 - **Phase 4 (done):** a `deploy` step (`/tl-deploy`, the `deploy` tool, or `tl deploy`) that takes the build live to a URL you own, closing the loop. With a Netlify token it deploys into your own account via the file-digest API (owned immediately, no claim step); with no token it delegates to your Netlify CLI - logged in it creates a site in your account, logged out it deploys anonymously with a one-hour claim link. BYOK, no central account, no lock-in. `--dry-run` shows the plan first.
+- **Backend-capable build (done):** when the three-question backend test shows a product genuinely needs a server, `/tl-build` emits a real backend alongside the static front end (serverless functions per backend requirement, a `schema.sql`, a names-only `.env.example`, an updated `netlify.toml`, and a `BACKEND.md` guide), with Neon Postgres as the documented default and overridable to any Postgres. Static stays the default, gated by the same backend test.
+- **Next:** automated backend deploy. `tl deploy` ships the static front end today and points at `BACKEND.md` for the one-time backend steps; teaching the deploy step to provision the database and ship the functions into your own account is the follow-up.
 
 ## Notes for contributors
 

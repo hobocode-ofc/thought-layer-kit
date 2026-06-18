@@ -257,9 +257,22 @@ export async function runDeploy(opts: DeployRunOptions, ctx: { deployedAt: strin
     return { ok: false, message: `Publish dir ${publishDirAbs} is empty - nothing to deploy.`, details: {} };
   }
 
+  // build.json may predate the backend block, so read it defensively.
+  const backend = manifest.backend ?? null;
   const backendWarn = manifest.hasBackend
-    ? ` WARNING: build.json says hasBackend:true${manifest.backendNote ? ` (${manifest.backendNote})` : ""}; ` +
-      `this static deploy publishes only the front end - the server part needs serverless functions or a separate host.`
+    ? (() => {
+        const guide = backend?.guide || "BACKEND.md";
+        const dbEnv = backend?.database?.envVar || "DATABASE_URL";
+        const names = (backend?.envVars || []).map((v) => v.name).filter(Boolean);
+        const others = names.filter((n) => n !== dbEnv);
+        const envList = others.length ? `${dbEnv} plus ${others.join(", ")}` : dbEnv;
+        return (
+          `\n\nStatic deploy: the front end goes live now. This project also has a backend ` +
+          `(build.json hasBackend is true${manifest.backendNote ? `: ${manifest.backendNote}` : ""}). ` +
+          `The backend artifact (serverless functions, schema.sql, a names-only .env.example) is built but not auto-deployed yet; backend deploy automation is a follow-up. ` +
+          `To run it yourself, follow ${guide}: provision Neon Postgres, set ${envList} in your host environment, then run netlify deploy with the functions present.`
+        );
+      })()
     : "";
 
   const token = process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_TOKEN || "";
@@ -318,7 +331,8 @@ export async function runDeploy(opts: DeployRunOptions, ctx: { deployedAt: strin
         deployRecord({
           deployedAt: ctx.deployedAt, mode: owned ? "cli" : "anonymous", publishDir: manifest.publishDir, fileCount,
           url, adminUrl: null, claimUrl, siteId: null, deployId: null,
-          hasBackend: manifest.hasBackend, backendNote: manifest.backendNote, buildProducer: manifest.producer, stateFile,
+          hasBackend: manifest.hasBackend, backendNote: manifest.backendNote, backendKind: backend?.backendKind ?? null,
+          buildProducer: manifest.producer, stateFile,
         }),
       );
       // If anonymity was explicitly asked for but the CLI is logged in, it went
@@ -349,7 +363,8 @@ export async function runDeploy(opts: DeployRunOptions, ctx: { deployedAt: strin
       deployRecord({
         deployedAt: ctx.deployedAt, mode: "token", publishDir: manifest.publishDir, fileCount,
         url: r.url || null, adminUrl: r.adminUrl || null, claimUrl: null, siteId: r.siteId, deployId: r.deployId,
-        hasBackend: manifest.hasBackend, backendNote: manifest.backendNote, buildProducer: manifest.producer, stateFile,
+        hasBackend: manifest.hasBackend, backendNote: manifest.backendNote, backendKind: backend?.backendKind ?? null,
+        buildProducer: manifest.producer, stateFile,
       }),
     );
     return {

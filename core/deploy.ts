@@ -10,6 +10,7 @@
 // import and it is pure (content in, hex out).
 
 import { createHash } from "node:crypto";
+import type { BackendKind } from "./backend.ts";
 
 export const sha1Hex = (data: Buffer | string): string =>
   createHash("sha1").update(data).digest("hex");
@@ -106,6 +107,10 @@ export interface DeployRecord {
   deployId: string | null;
   hasBackend: boolean;
   backendNote: string | null;
+  // Provenance of the backend payload from build.json (null for a static build).
+  // The static deploy does not ship a backend; this just records what the build
+  // declared, for the deploy-automation follow-up to read.
+  backendKind?: BackendKind | null;
   buildProducer: "agent" | "scaffold" | null;
   stateFile: string | null;
 }

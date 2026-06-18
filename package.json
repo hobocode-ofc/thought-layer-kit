@@ -1,6 +1,6 @@
 {
   "name": "@hobocode/thought-layer",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "The Thought Layer: rigor for building. Validate an idea, grill it into a buildable spec, then build and deploy it, inside the agent you already use. BYOK, no telemetry.",
   "license": "MIT",
   "author": "Hobocode LLC <jerm@hobocode.net>",
@@ -70,6 +70,7 @@
     "core/deploy-io.ts",
     "dist",
     "README.md",
+    "SECURITY.md",
     "LICENSE"
   ]
 }

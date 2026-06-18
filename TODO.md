@@ -2,6 +2,10 @@
 
 Things only you can do. Claude keeps adding to this as it builds; you check them off.
 
+## Next session (planned, not started)
+- [ ] **Backend-capable build + deploy** for products that genuinely need a server or database. Today build is static-first (the three-question backend test gates and flags any backend, and the deploy publishes a static `dist/`). Next: a path for when a requirement truly needs a backend, e.g. Netlify Functions / a serverless adapter, or a documented separate host, still BYOK and owned. Gate it behind the existing backend test so static stays the default.
+- [ ] **More Pi screenshots** for the docs (tl_project output, a `tl deploy` result) so weareallproductmanagersnow.com/pi can show the build and deploy steps. The web docs omit those shots cleanly until they exist; rebuild the page once captured.
+
 ## Repo + identity
 - [ ] Confirm the package name (`@hobocode/thought-layer`) and repo name (`thought-layer-kit`). Change before anything publishes if you want different.
 - [ ] Confirm Hobocode LLC as the license / copyright holder (currently in LICENSE).

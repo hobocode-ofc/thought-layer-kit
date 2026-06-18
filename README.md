@@ -17,6 +17,10 @@ This is open source and BYOK by design. The point is to help people build real t
 - **thought-layer-prd.** Draft the complete PRD — with a first-cut domain glossary and testable requirements — from the validated idea and business model. The plan the grill then hardens.
 - **thought-layer-grill.** The last design step: grills the draft PRD against the domain one question at a time, sharpening the glossary and hardening the requirements inline until it is build-ready. Runs after the PRD, not instead of the framework.
 - **thought-layer-naming.** Name the thing, with rationale and domain-ready slugs.
+- **thought-layer-build.** Build the hardened PRD into a static-first, deploy-ready artifact, verified to run, and leave a manifest the deploy step reads.
+- **thought-layer-deploy.** Take the build live to a URL you own, with no lock-in: a Netlify token deploys into your own account, or the Netlify CLI handles a logged-in or anonymous deploy.
+- **thought-layer-speedrun.** A fast, unranked path to a build-ready spec when you do not need the full panel and score.
+- **Optional deep-dives**, pulled in when you want to go further than the backbone: `thought-layer-strategy`, `thought-layer-brand`, `thought-layer-market-research`, and `thought-layer-business-model`.
 
 **A Pi package** that adds, on top of the skills:
 
@@ -30,11 +34,11 @@ This is open source and BYOK by design. The point is to help people build real t
 
 ```bash
 pi install npm:@hobocode/thought-layer
-# or, before it is published:
+# or track the latest from GitHub:
 pi install git:github.com/hobocode-ofc/thought-layer-kit
 ```
 
-Installing the package lights up the skills, the `/tl` commands, and the `tl_score` / `tl_domains` / `tl_project` tools. You can also invoke a skill directly with `/skill:thought-layer-panel`.
+Installing the package lights up the skills, the `/tl` commands, and the deterministic tools (`tl_score`, `tl_domains`, `tl_project`, `tl_state`, `tl_scaffold`, `deploy`). You can also invoke a skill directly with `/skill:thought-layer-panel`.
 
 ### Claude Code (or any agent that reads the Agent Skills format)
 

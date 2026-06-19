@@ -60,7 +60,7 @@ export function ghAuthed(): boolean {
 function syncConfigPath(): string {
   return process.env["THOUGHT_LAYER_SYNC_CONFIG"] || join(homedir(), ".thought-layer", "sync.json");
 }
-function loadConfig(): SyncConfig {
+export function loadConfig(): SyncConfig {
   const p = syncConfigPath();
   if (!existsSync(p)) return emptySyncConfig();
   try { return parseSyncConfig(readFileSync(p, "utf8")); }
@@ -74,12 +74,14 @@ function saveConfig(cfg: SyncConfig): void {
 
 // ---- git helpers -------------------------------------------------------------
 
-interface Run { status: number; out: string; err: string; }
-function git(dir: string | null, args: string[], timeout = 120000): Run {
+export interface Run { status: number; out: string; err: string; }
+// Exported so the artifacts delivery layer (artifacts-io.ts) reuses the exact
+// same git shell-out plumbing rather than re-implementing spawnSync.
+export function git(dir: string | null, args: string[], timeout = 120000): Run {
   const r = spawnSync("git", dir ? ["-C", dir, ...args] : args, { encoding: "utf8", timeout });
   return { status: r.status ?? 1, out: r.stdout || "", err: r.stderr || "" };
 }
-function isGitRepo(dir: string): boolean {
+export function isGitRepo(dir: string): boolean {
   return existsSync(join(dir, ".git")) && git(dir, ["rev-parse", "--is-inside-work-tree"]).status === 0;
 }
 function dirNonEmpty(dir: string): boolean {
@@ -91,7 +93,7 @@ const absDir = (d: string, cwd = process.cwd()): string => (isAbsolute(d) ? d : 
 // ---- the clone scaffolding files written on init -----------------------------
 
 const GITATTRIBUTES = `# The kit reconciles session JSON itself; never let git textually merge it\n# (which would corrupt the envelope). -merge keeps our copy in the working tree\n# on a conflict; the kit then rebuilds the merged result from the clean blobs.\n.thought-layer/*.json -merge\n`;
-const GITIGNORE = `# A Thought Layer sessions repo holds session state only. Built product\n# artifacts and secrets never sync here.\nbuild.json\ndeploy.json\n*.local\n.env\n.env.*\n!.env.example\ndist/\n.netlify/\nnode_modules/\n`;
+const GITIGNORE = `# A Thought Layer sessions repo holds session state only. Built product\n# artifacts and secrets never sync here.\nbuild.json\ndeploy.json\n*.local\n.env\n.env.*\n!.env.example\ndist/\n.netlify/\nnode_modules/\n# Delivered artifacts (tl artifacts) ARE intentionally tracked, even though the\n# same filenames are ignored elsewhere in the tree.\n!artifacts/\n!artifacts/**\n`;
 const README = `# Thought Layer sessions\n\nThis private repo is the home for Thought Layer session files. Each session is one\nfile under \`.thought-layer/<name>.json\` (the portable validation and design state).\nUse the kit to work with them:\n\n    tl sync open --name <session>     pull and resume a session\n    tl sync save --name <session>     snapshot the current state, commit, and push\n    tl sync list                      list the sessions in this repo\n\nCollaboration is handled by GitHub: add a collaborator to this repo in its GitHub\nsettings, and they can clone it and run the kit against the same sessions.\nThe kit reconciles concurrent edits itself (newest wins per field, conflicts are\nreported), so git never has to merge the JSON by hand.\n`;
 
 function writeCloneScaffold(cloneDir: string): void {
@@ -136,7 +138,8 @@ export async function runSync(opts: SyncRunOptions, ctx: { ts: number; exportedA
 }
 
 // Resolve the workspace + clone dir an op targets (everything except init).
-function resolveWorkspace(opts: SyncRunOptions, cfg: SyncConfig): { cloneDir: string; ws: SyncWorkspace | null } {
+// Exported so artifacts-io.ts resolves the same sessions workspace.
+export function resolveWorkspace(opts: SyncRunOptions, cfg: SyncConfig): { cloneDir: string; ws: SyncWorkspace | null } {
   if (opts.dir && opts.dir.trim()) return { cloneDir: absDir(opts.dir), ws: null };
   const env = process.env["THOUGHT_LAYER_SESSIONS_DIR"];
   if (env && env.trim()) return { cloneDir: absDir(env), ws: null };

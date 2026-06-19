@@ -26,6 +26,8 @@ import { applyStateOp, type StateOp } from "../core/state-ops.ts";
 import { runScaffold } from "../core/scaffold-io.ts";
 import { runDeploy } from "../core/deploy-io.ts";
 import { runSync } from "../core/sync-io.ts";
+import { runArtifacts } from "../core/artifacts-io.ts";
+import { runWiki } from "../core/notion-io.ts";
 
 const HELP = `tl - read/write a portable Thought Layer state file (default: .thought-layer/state.json)
 
@@ -36,6 +38,10 @@ const HELP = `tl - read/write a portable Thought Layer state file (default: .tho
             [--static-only] [--provision-db] [--apply-schema]   when build.json has a backend: ships functions+env by default; flags opt out or add Neon provision/schema
   tl sync <init|save|list|open|pull|push|status>             store/sync your session files in your own private GitHub repo
             [--repo owner/name] [--name x] [--dir p] [--workspace w] [--message m] [--no-push]
+  tl artifacts [--name x] [--workspace w]                    deliver the full asset bundle (PRD, brand, infographics, landing, deploy rules) to your sessions repo
+            [--no-push] [--no-deliver] [--domain x.com] [--founder "Name"]
+  tl wiki [--parent-page id|url] [--name x]                  build/refresh a private Notion wiki from the session + delivered artifacts
+            [--workspace w] [--replace] [--dry-run]            (set THOUGHT_LAYER_NOTION_TOKEN; share a Notion page with your integration)
   tl export [path]                   handoff check
   tl answer <qId> <value> [path]     record an answer
   tl feedback --data '<json>'        record a panel verdict ({qId,mode,personas,endState,round})
@@ -165,6 +171,47 @@ function main(): void {
       },
       { ts: Date.now(), exportedAt: new Date().toISOString() },
     ).then((r) => {
+      if (flags["json"]) console.log(JSON.stringify(r.details, null, 2));
+      else console.log(r.message);
+      process.exit(r.ok ? 0 : 1);
+    });
+    return;
+  }
+
+  // artifacts generates the full deliverable bundle from a session and delivers
+  // it to the user's own private sessions repo (it reuses the sync git plumbing).
+  if (args[0] === "artifacts") {
+    const r = runArtifacts(
+      {
+        path: typeof flags["path"] === "string" ? flags["path"] : undefined,
+        name: typeof flags["name"] === "string" ? flags["name"] : undefined,
+        workspace: typeof flags["workspace"] === "string" ? flags["workspace"] : undefined,
+        dir: typeof flags["dir"] === "string" ? flags["dir"] : undefined,
+        message: typeof flags["message"] === "string" ? flags["message"] : undefined,
+        noPush: flags["no-push"] === true,
+        noDeliver: flags["no-deliver"] === true,
+        domain: typeof flags["domain"] === "string" ? flags["domain"] : undefined,
+        founderName: typeof flags["founder"] === "string" ? flags["founder"] : undefined,
+      },
+      { generatedAt: new Date().toISOString() },
+    );
+    if (flags["json"]) console.log(JSON.stringify(r.details, null, 2));
+    else console.log(r.message);
+    process.exit(r.ok ? 0 : 1);
+  }
+
+  // wiki builds/refreshes a private Notion wiki from the session + the delivered
+  // artifacts. Async (Notion REST), so it resolves before exiting like deploy.
+  if (args[0] === "wiki") {
+    runWiki({
+      path: typeof flags["path"] === "string" ? flags["path"] : undefined,
+      name: typeof flags["name"] === "string" ? flags["name"] : undefined,
+      workspace: typeof flags["workspace"] === "string" ? flags["workspace"] : undefined,
+      dir: typeof flags["dir"] === "string" ? flags["dir"] : undefined,
+      parentPage: typeof flags["parent-page"] === "string" ? flags["parent-page"] : undefined,
+      replace: flags["replace"] === true,
+      dryRun: flags["dry-run"] === true,
+    }).then((r) => {
       if (flags["json"]) console.log(JSON.stringify(r.details, null, 2));
       else console.log(r.message);
       process.exit(r.ok ? 0 : 1);

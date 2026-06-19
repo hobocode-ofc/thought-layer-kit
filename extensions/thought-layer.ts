@@ -9,7 +9,7 @@ import {
   aggregateConfidence, statusFromConfidence, gradeFromConfidence,
   checkDomains, registrarSearchUrl,
   computeProjection, fmtMoney,
-  applyStateOp, runScaffold, runDeploy, runSync,
+  applyStateOp, runScaffold, runDeploy, runSync, runArtifacts, runWiki,
   type Assumptions, type StateOp,
 } from "../core/index.ts";
 
@@ -265,6 +265,66 @@ export default function (pi: ExtensionAPI) {
         { op: p.op, name: p.name, repo: p.repo, dir: p.dir, workspace: p.workspace, message: p.message, noPush: p.noPush, path: p.path },
         { ts: Date.now(), exportedAt: new Date().toISOString() },
       );
+      return text(r.message, r.details);
+    },
+  });
+
+  // tl_artifacts: generate the full deliverable bundle from a session (PRD,
+  // requirements, glossary, build prompt, brand guide + look book + logo, SWOT
+  // and business-model infographics, market research, a landing page) plus any
+  // on-disk build/deploy provenance, and deliver it to the user's OWN private
+  // sessions repo under artifacts/<session>/ via the sync git plumbing.
+  pi.registerTool({
+    name: "tl_artifacts",
+    label: "Thought Layer: deliver artifacts",
+    description:
+      "Generate the full asset bundle for a session and deliver it to your OWN private sessions repo (the one tl_sync set up), under artifacts/<session>/. " +
+      "Builds, from the saved state: PRD.md, Requirements.md, DomainGlossary.md, BuildPrompt.md, the brand style guide + LookBook.html + Logo.svg, SWOT.svg and BusinessModel.svg infographics, MarketResearch.md, and a deployable landing page; it also copies any on-disk build/deploy provenance (build.json, deploy.json, BACKEND/TRACEABILITY/DECISIONS.md, schema.sql, netlify.toml) into a Deploy/ folder, and writes an artifacts.json manifest the wiki reads. " +
+      "Force-adds past the sessions .gitignore, commits, and pushes (newest delivery wins; artifacts are not field-merged). Pass name to pick the session; noDeliver writes locally without committing. Needs a sessions workspace (tl_sync init) first.",
+    parameters: Type.Object({
+      name: Type.Optional(Type.String({ description: "Session name whose artifacts to deliver (defaults to the workspace's active session)." })),
+      workspace: Type.Optional(Type.String({ description: "Select an existing sessions workspace by label." })),
+      path: Type.Optional(Type.String({ description: "Explicit source state file to read (defaults to the session file in the clone)." })),
+      dir: Type.Optional(Type.String({ description: "Explicit clone dir for the workspace (overrides the configured one)." })),
+      message: Type.Optional(Type.String({ description: "Commit message for the delivery." })),
+      noPush: Type.Optional(Type.Boolean({ description: "Commit locally without pushing." })),
+      noDeliver: Type.Optional(Type.Boolean({ description: "Write the bundle into the clone but do not commit or push." })),
+      domain: Type.Optional(Type.String({ description: "Real domain for the landing page (canonical/OG)." })),
+      founder: Type.Optional(Type.String({ description: "Founder name for the landing page." })),
+    }),
+    async execute(_id, params): Promise<ToolResult> {
+      const p = params as { name?: string; workspace?: string; path?: string; dir?: string; message?: string; noPush?: boolean; noDeliver?: boolean; domain?: string; founder?: string };
+      const r = runArtifacts(
+        { name: p.name, workspace: p.workspace, path: p.path, dir: p.dir, message: p.message, noPush: p.noPush, noDeliver: p.noDeliver, domain: p.domain, founderName: p.founder },
+        { generatedAt: new Date().toISOString() },
+      );
+      return text(r.message, r.details);
+    },
+  });
+
+  // tl_wiki: build/refresh a PRIVATE Notion wiki (an internal intranet) from the
+  // session + the delivered artifacts. Notion is private by default, so the docs
+  // are behind the user's own auth. BYOK: the token is read from the environment
+  // only; the parent page (shared with the integration) is passed as an id/url.
+  pi.registerTool({
+    name: "tl_wiki",
+    label: "Thought Layer: Notion wiki",
+    description:
+      "Build or refresh a PRIVATE Notion wiki (an internal intranet) for a session: a root page, one child page per workflow area (Big Idea, Business Model, Brand, Market Research, Strategy, PRD, Decision Science), rendered natively in Notion, plus an Artifacts database that links the files delivered by tl_artifacts. " +
+      "Notion pages are private to the user's workspace, so this satisfies an auth requirement with no public exposure. BYOK: the integration token is read ONLY from THOUGHT_LAYER_NOTION_TOKEN (or NOTION_TOKEN) in the environment, never a parameter. Setup once: create an internal integration at notion.so/my-integrations, set the token, share a page with the integration, and pass that page as parentPage. " +
+      "Idempotent: it stores the page ids locally and refreshes content on re-run; replace recreates the wiki from scratch; dryRun reports the plan with no network call. Run tl_artifacts first so the Artifacts database has GitHub links.",
+    parameters: Type.Object({
+      name: Type.Optional(Type.String({ description: "Session name to publish (defaults to the workspace's active session)." })),
+      parentPage: Type.Optional(Type.String({ description: "Notion page id or URL the integration is shared with (where the wiki root is created). Or set THOUGHT_LAYER_NOTION_PARENT." })),
+      workspace: Type.Optional(Type.String({ description: "Select an existing sessions workspace by label." })),
+      path: Type.Optional(Type.String({ description: "Explicit source state file (defaults to the session file in the clone)." })),
+      dir: Type.Optional(Type.String({ description: "Explicit clone dir for the workspace." })),
+      replace: Type.Optional(Type.Boolean({ description: "Recreate the wiki from scratch (new pages) instead of refreshing the existing one." })),
+      dryRun: Type.Optional(Type.Boolean({ description: "Build the plan and report area/block/artifact counts with no network call." })),
+    }),
+    async execute(_id, params): Promise<ToolResult> {
+      const p = params as { name?: string; parentPage?: string; workspace?: string; path?: string; dir?: string; replace?: boolean; dryRun?: boolean };
+      const r = await runWiki({ name: p.name, parentPage: p.parentPage, workspace: p.workspace, path: p.path, dir: p.dir, replace: p.replace, dryRun: p.dryRun });
       return text(r.message, r.details);
     },
   });

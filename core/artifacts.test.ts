@@ -100,6 +100,18 @@ describe("buildArtifactSet", () => {
     }
   });
 
+  it("emits Compliance.md only when a governance report is present", () => {
+    const withGov: ProgressState = { ...fixture, governance: { report: "# Compliance & Tax\n\nResearch, not legal or tax advice. Verify with your advisors.\n\n## Licenses\n- A general business license.", generatedAt: "2026-06-19T00:00:00.000Z" } };
+    const a = buildArtifactSet(withGov, { generatedAt: "2026-06-19T00:00:00.000Z" });
+    expect(Object.keys(a.files)).toContain("Compliance.md");
+    expect(a.files["Compliance.md"]).toContain("Verify with your advisors");
+    expect(a.files["README.md"]).toContain("Compliance.md");
+    expect(a.manifest.files.some((f) => f.path === "Compliance.md")).toBe(true);
+
+    const without = buildArtifactSet(fixture, { generatedAt: "2026-06-19T00:00:00.000Z" });
+    expect(Object.keys(without.files)).not.toContain("Compliance.md");
+  });
+
   it("still synthesizes the landing page and README from an empty state", () => {
     const { files, manifest } = buildArtifactSet(emptyState(), { generatedAt: "2026-06-18T00:00:00.000Z" });
     expect(Object.keys(files)).toContain("LandingPage/index.html");

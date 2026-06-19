@@ -21,10 +21,10 @@ export const PROGRESS_FORMAT = 2;
 
 export const KNOWN_STATE_KEYS = [
   "version", "answers", "feedback", "bizModel", "grill",
-  "assets", "research", "swot", "prd", "naming", "brand", "kit",
+  "assets", "research", "swot", "prd", "naming", "brand", "governance", "kit",
 ] as const;
 
-export type ArtifactKey = "bizModel" | "grill" | "assets" | "research" | "swot" | "prd" | "naming" | "brand";
+export type ArtifactKey = "bizModel" | "grill" | "assets" | "research" | "swot" | "prd" | "naming" | "brand" | "governance";
 
 export interface Writer { kind: "web" | "kit"; version?: string; ts: number; }
 
@@ -81,6 +81,7 @@ export interface ProgressState {
   prd: unknown;
   naming: unknown;
   brand: unknown;
+  governance: unknown;
   kit: KitNamespace | null;
   [extra: string]: unknown;
 }
@@ -99,7 +100,7 @@ export interface ProgressPayload {
 export function emptyState(): ProgressState {
   return {
     version: 2, answers: {}, feedback: {}, bizModel: null, grill: null,
-    assets: null, research: null, swot: null, prd: null, naming: null, brand: null, kit: null,
+    assets: null, research: null, swot: null, prd: null, naming: null, brand: null, governance: null, kit: null,
   };
 }
 
@@ -132,6 +133,7 @@ export function parseProgress(text: string): ProgressPayload {
     prd: s["prd"] ?? null,
     naming: s["naming"] ?? null,
     brand: s["brand"] ?? null,
+    governance: s["governance"] ?? null,
     kit: (s["kit"] as KitNamespace | undefined) ?? null,
   };
   return {
@@ -149,7 +151,7 @@ export function parseProgress(text: string): ProgressPayload {
 export function buildProgress(state: Partial<ProgressState>, writer: Writer, exportedAt: string): ProgressPayload {
   const s = (state || {}) as Record<string, unknown>;
   const {
-    answers, feedback, bizModel, grill, assets, research, swot, prd, naming, brand, kit,
+    answers, feedback, bizModel, grill, assets, research, swot, prd, naming, brand, governance, kit,
     version: _v, exportedAt: _ea, formatNewer: _fn, ...rest
   } = s;
   return {
@@ -170,6 +172,7 @@ export function buildProgress(state: Partial<ProgressState>, writer: Writer, exp
       prd: prd ?? null,
       naming: naming ?? null,
       brand: brand ?? null,
+      governance: governance ?? null,
       kit: (kit as KitNamespace | undefined) ?? null,
       ...rest,
     },
@@ -299,7 +302,7 @@ export function summarizeState(state: ProgressState): StateSummary {
     if (s === "green" || s === "yellow" || s === "red") byStatus[s]++;
     else byStatus.ungraded++;
   }
-  const artifacts = (["bizModel", "grill", "assets", "research", "swot", "prd", "naming", "brand"] as const)
+  const artifacts = (["bizModel", "grill", "assets", "research", "swot", "prd", "naming", "brand", "governance"] as const)
     .filter((k) => state[k] != null);
   const kit = (state.kit && typeof state.kit === "object") ? state.kit : null;
   return {

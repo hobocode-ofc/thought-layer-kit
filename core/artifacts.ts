@@ -50,6 +50,14 @@ export interface Swot {
   opportunities?: string[];
   threats?: string[];
 }
+export interface Governance {
+  jurisdiction?: string;
+  entityType?: string;
+  sector?: string;
+  report?: string; // the researched GRC + licensing + tax markdown report
+  sources?: string[];
+  generatedAt?: string;
+}
 
 // ---- small narrow helpers (mirror scaffold.ts) -------------------------------
 
@@ -618,6 +626,14 @@ export function buildArtifactSet(state: ProgressState, opts: ArtifactBuildOption
     add("MarketResearch.md", `# Market Research\n\n_${str(research["description"])}_\n\n${str(research["brief"])}`, "research");
   }
 
+  // Compliance report (governance, regulatory, licensing, taxation), from the
+  // thought-layer-compliance skill. The body is the agent's researched report,
+  // which already carries its own "not legal or tax advice" disclaimer.
+  const governance = obj(state.governance);
+  if (str(governance["report"]).trim()) {
+    add("Compliance.md", str(governance["report"]), "governance");
+  }
+
   // Brand kit.
   if (brand?.guide) {
     add("Brand/BrandStyleGuide.md", brandGuideMarkdown(brand.guide), "brand");
@@ -665,6 +681,7 @@ function readmeIndex(files: Record<string, string>, brandName: string): string {
   row("SWOT.md", "Strengths, weaknesses, opportunities, threats");
   row("SWOT.svg", "The SWOT as a poster infographic");
   row("MarketResearch.md", "The market research brief");
+  row("Compliance.md", "Governance, licensing, and tax requirements to review with your legal and tax advisors");
   row("Brand/BrandStyleGuide.md", "Brand voice, palette, and typography");
   row("Brand/Logo.svg", "The chosen logo (vector, editable)");
   row("Brand/LookBook.html", "The identity applied; open in any browser");

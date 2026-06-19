@@ -179,7 +179,8 @@ export const WIKI_AREAS: Array<{ key: string; title: string; emoji: string }> = 
   { key: "market-research", title: "Market Research", emoji: "📊" },
   { key: "strategy", title: "Strategy", emoji: "📈" },
   { key: "product", title: "Product (PRD)", emoji: "📋" },
-  { key: "decision-science", title: "Decision Science", emoji: "⚖️" },
+  { key: "compliance", title: "Compliance & Tax", emoji: "⚖️" },
+  { key: "decision-science", title: "Decision Science", emoji: "🧭" },
   { key: "library", title: "Library", emoji: "📚" },
 ];
 
@@ -273,6 +274,15 @@ export function buildWikiPlan(state: ProgressState, opts: WikiBuildOptions = {})
     if (grill?.requirements?.length) { b.push(divider()); b.push(...markdownToBlocks(requirementsMarkdown(grill))); }
     if (grill?.glossary?.length) { b.push(divider()); b.push(...markdownToBlocks(glossaryMarkdown(grill))); }
     areaBlocks["product"] = b;
+  }
+
+  // Compliance: the researched GRC, licensing, and tax report (from the
+  // thought-layer-compliance skill). The report carries its own disclaimer.
+  {
+    const b: Block[] = [];
+    const report = str(obj(state.governance)["report"]);
+    if (report.trim()) b.push(...markdownToBlocks(report));
+    areaBlocks["compliance"] = b;
   }
 
   // Decision science: any dq-* / decision-* answers.

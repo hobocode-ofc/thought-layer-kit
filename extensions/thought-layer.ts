@@ -160,7 +160,7 @@ export default function (pi: ExtensionAPI) {
       path: Type.Optional(Type.String({ description: "Project dir or .json path; selects WHICH state file to use. Defaults to ./.thought-layer/state.json. Use a named file (e.g. .thought-layer/acme.json) to keep ideas separate; for 'list', a project dir to scan." })),
       qId: Type.Optional(Type.String({ description: "Question id (for 'answer'/'feedback'). Must be a real Thought Layer question id." })),
       value: Type.Optional(Type.Unknown({ description: "For 'answer': the answer string. For 'artifact': the artifact object." })),
-      artifact: Type.Optional(Type.String({ description: "For 'artifact': one of bizModel, grill, assets, research, swot, prd, naming, brand." })),
+      artifact: Type.Optional(Type.String({ description: "For 'artifact': one of bizModel, grill, assets, research, swot, prd, naming, brand, governance." })),
       mode: Type.Optional(Type.String({ description: "For 'feedback': 'panel' (3 personas) or a single persona key." })),
       personas: Type.Optional(Type.Array(PersonaSchema, { description: "For 'feedback': one entry per persona with its assessment + confidence." })),
       endState: Type.Optional(Type.String({ description: "For 'feedback': 'open' (still iterating), 'pass' (cleared 0.85), or 'setAside' (frozen with to-dos)." })),

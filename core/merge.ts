@@ -28,7 +28,7 @@ export interface MergeOpts {
   theirsTs: number; // their file's writer.ts
 }
 
-const ARTIFACT_KEYS = ["bizModel", "grill", "assets", "research", "swot", "prd", "naming", "brand"] as const;
+const ARTIFACT_KEYS = ["bizModel", "grill", "assets", "research", "swot", "prd", "naming", "brand", "governance"] as const;
 
 const num = (v: unknown): number => (typeof v === "number" && !Number.isNaN(v) ? v : 0);
 const genAt = (v: unknown): number =>
@@ -108,6 +108,7 @@ export function mergeProgressStates(ours: ProgressState, theirs: ProgressState, 
     prd: artifact("prd"),
     naming: artifact("naming"),
     brand: artifact("brand"),
+    governance: artifact("governance"),
     kit: mergeKit(ours.kit, theirs.kit, oursNewer),
   };
 

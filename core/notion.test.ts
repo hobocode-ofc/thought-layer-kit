@@ -18,6 +18,7 @@ const fixture: ProgressState = {
   swot: { strengths: ["fast"], weaknesses: ["new"], opportunities: ["big market"], threats: ["incumbents"] },
   bizModel: { assumptions: { parties: [{ id: "crew", name: "Crew", role: "customer", startingCount: 10, monthlyNewBase: 5, monthlyNewGrowthPct: 3, monthlyChurnPct: 2, revenuePerUnitPerMonth: 40, cacPerUnit: 50 }], horizonMonths: 24, currency: "USD" } },
   research: { description: "TAM", brief: "The market is large.\n\nGrowing 20% a year." },
+  governance: { report: "# Compliance & Tax\n\nNot legal or tax advice.\n\n## Licenses\n- A general business license.", generatedAt: "2026-06-19T00:00:00.000Z" },
   brand: {
     guide: {
       brandName: "Acme Dispatch", tagline: "Scheduling made simple", positioning: "For HVAC contractors.",
@@ -101,7 +102,7 @@ describe("buildWikiPlan", () => {
 
     expect(plan.title).toBe("Acme Dispatch workspace");
     const keys = plan.areas.map((a) => a.key);
-    for (const k of ["big-idea", "business-model", "brand", "market-research", "strategy", "product", "decision-science"]) {
+    for (const k of ["big-idea", "business-model", "brand", "market-research", "strategy", "product", "compliance", "decision-science"]) {
       expect(keys, `missing area ${k}`).toContain(k);
     }
     // library has no structured data -> no page.
@@ -116,8 +117,8 @@ describe("buildWikiPlan", () => {
     expect(plan.artifacts.some((a) => a.path.startsWith("LandingPage/") && a.path !== "LandingPage/index.html")).toBe(false);
   });
 
-  it("has all 8 areas defined and yields few areas for an empty state", () => {
-    expect(WIKI_AREAS.length).toBe(8);
+  it("has all 9 areas defined and yields no areas for an empty state", () => {
+    expect(WIKI_AREAS.length).toBe(9);
     const plan = buildWikiPlan(emptyState(), {});
     expect(plan.title).toBe("Your Product workspace");
     expect(plan.areas.length).toBe(0); // nothing captured yet

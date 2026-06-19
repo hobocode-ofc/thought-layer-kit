@@ -12,7 +12,7 @@ import {
   type ArtifactKey, type PersonaInput, type EndState, type KitCursor,
 } from "./progress.ts";
 
-export const ARTIFACT_KEYS: ArtifactKey[] = ["bizModel", "grill", "assets", "research", "swot", "prd", "naming", "brand"];
+export const ARTIFACT_KEYS: ArtifactKey[] = ["bizModel", "grill", "assets", "research", "swot", "prd", "naming", "brand", "governance"];
 const END_STATES: EndState[] = ["open", "pass", "setAside"];
 
 export interface StateOp {

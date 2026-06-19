@@ -312,7 +312,8 @@ export default function (pi: ExtensionAPI) {
     description:
       "Build or refresh a PRIVATE Notion wiki (an internal intranet) for a session: a root page, one child page per workflow area (Big Idea, Business Model, Brand, Market Research, Strategy, PRD, Decision Science), rendered natively in Notion, plus an Artifacts database that links the files delivered by tl_artifacts. " +
       "Notion pages are private to the user's workspace, so this satisfies an auth requirement with no public exposure. BYOK: the integration token is read ONLY from THOUGHT_LAYER_NOTION_TOKEN (or NOTION_TOKEN) in the environment, never a parameter. Setup once: create an internal integration at notion.so/my-integrations, set the token, share a page with the integration, and pass that page as parentPage. " +
-      "Idempotent: it stores the page ids locally and refreshes content on re-run; replace recreates the wiki from scratch; dryRun reports the plan with no network call. Run tl_artifacts first so the Artifacts database has GitHub links.",
+      "Idempotent: it stores the page ids locally and refreshes content on re-run; replace recreates the wiki from scratch; dryRun reports the plan with no network call. Run tl_artifacts first so the Artifacts database has GitHub links. " +
+      "If you already have a Notion MCP connected, prefer emitPlan:true: it returns the wiki as per-area markdown (no token, no network) for you to create the pages and Artifacts database through that MCP; the token path stays the fallback.",
     parameters: Type.Object({
       name: Type.Optional(Type.String({ description: "Session name to publish (defaults to the workspace's active session)." })),
       parentPage: Type.Optional(Type.String({ description: "Notion page id or URL the integration is shared with (where the wiki root is created). Or set THOUGHT_LAYER_NOTION_PARENT." })),
@@ -321,10 +322,11 @@ export default function (pi: ExtensionAPI) {
       dir: Type.Optional(Type.String({ description: "Explicit clone dir for the workspace." })),
       replace: Type.Optional(Type.Boolean({ description: "Recreate the wiki from scratch (new pages) instead of refreshing the existing one." })),
       dryRun: Type.Optional(Type.Boolean({ description: "Build the plan and report area/block/artifact counts with no network call." })),
+      emitPlan: Type.Optional(Type.Boolean({ description: "Return the wiki as per-area markdown (the agent-replayable plan) with no token and no network call, so you can create the pages through a connected Notion MCP. The plan is in the result details under `plan`." })),
     }),
     async execute(_id, params): Promise<ToolResult> {
-      const p = params as { name?: string; parentPage?: string; workspace?: string; path?: string; dir?: string; replace?: boolean; dryRun?: boolean };
-      const r = await runWiki({ name: p.name, parentPage: p.parentPage, workspace: p.workspace, path: p.path, dir: p.dir, replace: p.replace, dryRun: p.dryRun });
+      const p = params as { name?: string; parentPage?: string; workspace?: string; path?: string; dir?: string; replace?: boolean; dryRun?: boolean; emitPlan?: boolean };
+      const r = await runWiki({ name: p.name, parentPage: p.parentPage, workspace: p.workspace, path: p.path, dir: p.dir, replace: p.replace, dryRun: p.dryRun, emitPlan: p.emitPlan });
       return text(r.message, r.details);
     },
   });

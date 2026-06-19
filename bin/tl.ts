@@ -41,7 +41,8 @@ const HELP = `tl - read/write a portable Thought Layer state file (default: .tho
   tl artifacts [--name x] [--workspace w]                    deliver the full asset bundle (PRD, brand, infographics, landing, deploy rules) to your sessions repo
             [--no-push] [--no-deliver] [--domain x.com] [--founder "Name"]
   tl wiki [--parent-page id|url] [--name x]                  build/refresh a private Notion wiki from the session + delivered artifacts
-            [--workspace w] [--replace] [--dry-run]            (set THOUGHT_LAYER_NOTION_TOKEN; share a Notion page with your integration)
+            [--workspace w] [--replace] [--dry-run]            token path: set THOUGHT_LAYER_NOTION_TOKEN and share a Notion page with your integration
+            [--emit-plan]                                      or emit the wiki as per-area markdown to build via a connected Notion MCP (no token)
   tl export [path]                   handoff check
   tl answer <qId> <value> [path]     record an answer
   tl feedback --data '<json>'        record a panel verdict ({qId,mode,personas,endState,round})
@@ -211,6 +212,7 @@ function main(): void {
       parentPage: typeof flags["parent-page"] === "string" ? flags["parent-page"] : undefined,
       replace: flags["replace"] === true,
       dryRun: flags["dry-run"] === true,
+      emitPlan: flags["emit-plan"] === true,
     }).then((r) => {
       if (flags["json"]) console.log(JSON.stringify(r.details, null, 2));
       else console.log(r.message);

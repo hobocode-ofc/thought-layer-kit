@@ -16,7 +16,7 @@ import { git, isGitRepo, loadConfig, resolveWorkspace } from "./sync-io.ts";
 import { slugify } from "./sync.ts";
 import { repoOwnerName } from "./artifacts-io.ts";
 import { STATE_DIR, loadStateFile } from "./state-file.ts";
-import { buildWikiPlan, chunkChildren, type Block, type WikiPlan, type WikiArtifact } from "./notion.ts";
+import { buildWikiPlan, wikiPlanToMarkdown, chunkChildren, type Block, type WikiPlan, type WikiArtifact } from "./notion.ts";
 import type { ArtifactManifest } from "./artifacts.ts";
 import type { StateOpResult } from "./state-ops.ts";
 
@@ -33,6 +33,7 @@ export interface WikiRunOptions {
   parentPage?: string; // Notion page id or URL the integration is shared with
   replace?: boolean; // recreate the root page from scratch (new ids)
   dryRun?: boolean; // build the plan, report counts, no network
+  emitPlan?: boolean; // emit the plan as agent-replayable markdown (MCP path), no token, no network
 }
 
 const ok = (message: string, details: Record<string, unknown> = {}): StateOpResult => ({ ok: true, message, details });
@@ -220,6 +221,21 @@ export async function runWiki(opts: WikiRunOptions): Promise<StateOpResult> {
       return ok(
         `Dry run for "${plan.title}": ${plan.areas.length} area page(s), ${blockCount} blocks total, ${plan.artifacts.length} artifact(s) in the database.\nAreas: ${areaList || "(none with content yet)"}.${manifest ? "" : "\nNo delivered artifacts found; run tl artifacts first to populate the Artifacts database with GitHub links."}`,
         { title: plan.title, areas: plan.areas.map((a) => ({ key: a.key, blocks: a.blocks.length })), blockCount, artifacts: plan.artifacts.length, delivered: !!manifest },
+      );
+    }
+
+    // Emit the plan as agent-replayable markdown (no token, no network). This is
+    // the MCP path: when the agent already holds a Notion MCP, it creates the
+    // pages itself from this plan instead of the kit calling Notion with a token.
+    if (opts.emitPlan) {
+      const pm = wikiPlanToMarkdown(plan);
+      const areaList = pm.areas.map((a) => `${a.emoji} ${a.title}`).join(", ");
+      return ok(
+        `Wiki plan for "${plan.title}" ready (no Notion call, no token needed): a root page, ${pm.areas.length} child page(s), ${blockCount} blocks, ${pm.artifacts.length} artifact(s). ` +
+          `Create them with your connected Notion MCP: a root page "${plan.title}", one child page per area (each area's markdown is in the plan), and an Artifacts database with the listed files.` +
+          `${manifest ? "" : " No delivered artifacts were found, so the Artifacts list is empty; run tl artifacts first to add GitHub links."}` +
+          `\nAreas: ${areaList || "(none with content yet)"}.`,
+        { plan: pm, delivered: !!manifest },
       );
     }
 

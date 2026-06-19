@@ -119,6 +119,106 @@ export function markdownToBlocks(md: string): Block[] {
   return out;
 }
 
+// ---- blocks -> markdown (the inverse; the agent-replayable wiki plan) ---------
+
+// Reverse rich_text segments to inline markdown. Adjacent segments that share
+// formatting are merged first (undoing the 2000-char split), so a long bold run
+// renders as one **...** rather than several.
+function richTextToMarkdown(rt: RichText[]): string {
+  if (!rt || !rt.length) return "";
+  const sig = (s: RichText): string => {
+    const a = s.annotations || {};
+    return `${a.bold ? 1 : 0}${a.italic ? 1 : 0}${a.code ? 1 : 0}|${s.text.link?.url || ""}`;
+  };
+  const merged: RichText[] = [];
+  for (const s of rt) {
+    const prev = merged[merged.length - 1];
+    if (prev && sig(prev) === sig(s)) prev.text.content += s.text.content;
+    else merged.push({ type: "text", text: { content: s.text.content, ...(s.text.link ? { link: s.text.link } : {}) }, ...(s.annotations ? { annotations: { ...s.annotations } } : {}) });
+  }
+  return merged
+    .map((seg) => {
+      const a = seg.annotations || {};
+      let t = seg.text.content;
+      if (a.code) t = "`" + t + "`";
+      else {
+        if (a.bold) t = `**${t}**`;
+        if (a.italic) t = `*${t}*`;
+      }
+      const link = seg.text.link?.url;
+      return link ? `[${t}](${link})` : t;
+    })
+    .join("");
+}
+
+// The plain (unformatted) concatenation of a rich_text run, for code blocks and
+// table cells where inline markdown would be wrong.
+function richTextToPlain(rt: RichText[]): string {
+  return (rt || []).map((s) => s.text.content).join("");
+}
+
+function tableToMarkdown(tbl: Record<string, unknown>): string {
+  const rows = ((tbl["children"] as Block[]) || []).map((r) =>
+    (((obj(r["table_row"])["cells"]) as RichText[][]) || []).map((c) =>
+      richTextToPlain(c).replace(/\|/g, "\\|").replace(/\n+/g, " ").trim(),
+    ),
+  );
+  if (!rows.length) return "";
+  const width = Math.max(...rows.map((r) => r.length));
+  const pad = (r: string[]): string[] => { const c = r.slice(); while (c.length < width) c.push(""); return c; };
+  const line = (cells: string[]): string => `| ${cells.join(" | ")} |`;
+  const [header, ...body] = rows;
+  const out = [line(pad(header!)), line(pad(header!).map(() => "---"))];
+  for (const r of body) out.push(line(pad(r)));
+  return out.join("\n");
+}
+
+// Render a flat block array back to GitHub-flavored markdown: the inverse of
+// markdownToBlocks plus the synthesized blocks buildWikiPlan adds (callouts,
+// tables). Consecutive list items stay tight; other blocks get a blank line.
+export function blocksToMarkdown(blocks: Block[]): string {
+  const isList = (t: string): boolean => t === "bulleted_list_item" || t === "numbered_list_item";
+  const parts: string[] = [];
+  let prevType = "";
+  let numbered = 0;
+  for (const b of blocks || []) {
+    const type = str(b["type"]);
+    const data = obj(b[type]);
+    const rt = (data["rich_text"] as RichText[]) || [];
+    if (type !== "numbered_list_item") numbered = 0;
+    let rendered: string;
+    switch (type) {
+      case "heading_1": rendered = `# ${richTextToMarkdown(rt)}`; break;
+      case "heading_2": rendered = `## ${richTextToMarkdown(rt)}`; break;
+      case "heading_3": rendered = `### ${richTextToMarkdown(rt)}`; break;
+      case "bulleted_list_item": rendered = `- ${richTextToMarkdown(rt)}`; break;
+      case "numbered_list_item": rendered = `${++numbered}. ${richTextToMarkdown(rt)}`; break;
+      case "quote": rendered = `> ${richTextToMarkdown(rt)}`; break;
+      case "callout": {
+        const emoji = str(obj(data["icon"])["emoji"]);
+        rendered = `> ${emoji ? `${emoji} ` : ""}${richTextToMarkdown(rt)}`;
+        break;
+      }
+      case "divider": rendered = "---"; break;
+      case "code": {
+        const lang = str(data["language"]);
+        rendered = "```" + (lang && lang !== "plain text" ? lang : "") + "\n" + richTextToPlain(rt) + "\n```";
+        break;
+      }
+      case "table": rendered = tableToMarkdown(data); break;
+      case "bookmark": rendered = str(data["url"]); break;
+      case "image": { const u = str(obj(data["external"])["url"]); rendered = u ? `![](${u})` : ""; break; }
+      case "paragraph": rendered = richTextToMarkdown(rt); break;
+      default: rendered = richTextToMarkdown(rt);
+    }
+    if (!rendered && type !== "divider") continue;
+    const sep = parts.length === 0 ? "" : isList(type) && isList(prevType) ? "\n" : "\n\n";
+    parts.push(sep + rendered);
+    prevType = type;
+  }
+  return parts.join("");
+}
+
 // ---- API-limit helpers (unit-tested) -----------------------------------------
 
 // Split a children array into <=100-block append batches.
@@ -309,4 +409,30 @@ export function buildWikiPlan(state: ProgressState, opts: WikiBuildOptions = {})
     .map((f) => ({ name: f.path, path: f.path, category: artifactCategory(f.path), bytes: f.bytes, ...(urls[f.path] ? { url: urls[f.path] } : {}) }));
 
   return { title: `${brandName} workspace`, icon: "🚀", overview, areas, artifacts };
+}
+
+// ---- the agent-replayable plan (markdown per area; no token, no network) ------
+
+export interface WikiPlanArea { key: string; title: string; emoji: string; markdown: string; }
+export interface WikiPlanMarkdown {
+  title: string;
+  icon: string;
+  overview: string;
+  areas: WikiPlanArea[];
+  artifacts: WikiArtifact[];
+}
+
+// Render a WikiPlan to per-area markdown so an agent that already holds a Notion
+// MCP can replay it (create a root page, one child page per area, an Artifacts
+// database) without the kit ever touching Notion or needing a token. The token
+// path (notion-io) renders the same plan as native blocks; this is the same
+// content, one canonical plan with two executors.
+export function wikiPlanToMarkdown(plan: WikiPlan): WikiPlanMarkdown {
+  return {
+    title: plan.title,
+    icon: plan.icon,
+    overview: blocksToMarkdown(plan.overview),
+    areas: plan.areas.map((a) => ({ key: a.key, title: a.title, emoji: a.emoji, markdown: blocksToMarkdown(a.blocks) })),
+    artifacts: plan.artifacts,
+  };
 }

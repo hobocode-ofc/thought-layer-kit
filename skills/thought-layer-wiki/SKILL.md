@@ -11,15 +11,33 @@ The wiki is the founder's keepable home for everything the workflow produced: th
 
 1. **A sessions workspace.** The wiki reads the session from the user's private sessions repo (set up by the `tl_sync` tool / `tl sync init`). Honor the usual selection: `--name <session>` (or the workspace's active session), `--workspace <label>`, or an explicit `--dir`.
 2. **Delivered artifacts (recommended).** Run the `tl_artifacts` tool / **`tl artifacts`** first so `artifacts/<session>/artifacts.json` exists. The wiki reads it to fill the Artifacts database with GitHub links. Without it, the wiki still builds from the session state, but the Artifacts database is empty; the tool says so. Tell the user to deliver artifacts first for the full result.
-3. **A Notion integration (one-time, BYOK).** The user creates an internal integration at https://www.notion.so/my-integrations, copies the secret, and sets it as `THOUGHT_LAYER_NOTION_TOKEN` (or `NOTION_TOKEN`) in the environment. Then, in Notion, they open the page that should hold the wiki, click **Share**, and add the integration so it has access. That page's id or URL is the `parent-page`. The token is read **only from the environment**; never ask the user to paste it into the chat or put it in a parameter or file.
+3. **Notion access (one of two ways).** Either (a) a **Notion MCP / connector** already authorized to the user's workspace, in which case you need no token at all (see "Two ways to build it" below); or (b) a one-time **BYOK integration**: the user creates an internal integration at https://www.notion.so/my-integrations, copies the secret, sets it as `THOUGHT_LAYER_NOTION_TOKEN` (or `NOTION_TOKEN`) in the environment, then in Notion opens the page that should hold the wiki, clicks **Share**, and adds the integration so it has access. That page's id or URL is the `parent-page`. The token is read **only from the environment**; never ask the user to paste it into the chat or put it in a parameter or file.
 
-## How to run it
+## Two ways to build it
+
+**First check what you have.** If you (the agent) already have a **Notion MCP / connector** authorized to the user's workspace, prefer it — the user skips the entire integration-token setup. Otherwise use the BYOK token path, which stays the universal floor (the browser SPA and a plain CLI/CI host have no MCP). Both paths render the **same plan**; pick one.
+
+### A. Notion MCP connected (preferred, no token)
+
+Build the wiki through the MCP and never ask for a token:
+
+1. **Get the plan:** `tl wiki --name <session> --emit-plan --json` (or the `tl_wiki` tool with `emitPlan: true`). With **no token and no network call** it returns `{ title, icon, overview, areas: [{ key, title, emoji, markdown }], artifacts: [{ name, category, bytes, url? }] }`. Each area's `markdown` is the ready-to-post page body.
+2. **Pick the parent.** Ask the user which Notion page should hold the wiki, unless they already said.
+3. **Avoid duplicates first.** The local id-map (`~/.thought-layer/notion.json`) is written only by the token path, so on the MCP path it does not exist. Before creating, **search Notion for an existing page titled `<title>`**; if it exists, update it in place; otherwise create it. If you cannot search, ask the user whether to create fresh or point you at the existing page.
+4. **Create the root page** titled `plan.title` under the parent (icon `plan.icon`), with `overview` as its body.
+5. **Create one child page per area** in `areas[]`, titled `"<emoji> <title>"`, with that area's `markdown` as the body.
+6. **Create the Artifacts database** under the root with columns Name, Category, Size, Link, and one row per `artifacts[]` entry (use its `url` for Link when present).
+7. **Report the root page URL.**
+
+### B. No MCP: the BYOK token path (the floor)
 
 Use the tool, never a hand-written Notion `curl`:
 - **Pi:** the `tl_wiki` tool. Start with `tl_wiki { name, dryRun: true }` to show the plan (area pages, block counts, artifact count), then `tl_wiki { name, parentPage }` to build it.
 - **Any shell agent (Claude Code, CI, a plain terminal):** `tl wiki --name <session> --dry-run`, then `tl wiki --name <session> --parent-page <id|url>` (via `npx -y @hobocode/thought-layer tl wiki`).
 
 Always **dry-run first** and show the user the area + artifact plan, then build.
+
+> GitHub needs no equivalent path: `tl artifacts` and `tl sync` already authenticate via the `gh`/git keyring (no token paste), so a GitHub MCP is not required for delivery.
 
 ## What it builds
 

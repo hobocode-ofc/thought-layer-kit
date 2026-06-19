@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  markdownToBlocks, chunkRichText, chunkChildren, withinDepth,
+  markdownToBlocks, blocksToMarkdown, wikiPlanToMarkdown, chunkRichText, chunkChildren, withinDepth,
   buildWikiPlan, artifactCategory, artifactRef, WIKI_AREAS, NOTION_FREE_FILE_LIMIT,
   type Block,
 } from "./notion.ts";
@@ -51,6 +51,62 @@ describe("markdownToBlocks", () => {
     const rt = (para!["paragraph"] as { rich_text: Array<{ text: { content: string }; annotations?: { bold?: boolean; code?: boolean } }> }).rich_text;
     expect(rt.some((s) => s.annotations?.bold && s.text.content === "bold")).toBe(true);
     expect(rt.some((s) => s.annotations?.code && s.text.content === "mono")).toBe(true);
+  });
+});
+
+describe("blocksToMarkdown", () => {
+  it("round-trips the supported markdown block types", () => {
+    const md = "# Title\n## Sub\nA paragraph with **bold** and `code`.\n- a bullet\n1. a number\n> a quote\n\n```\ncode line\n```\n---\n";
+    const out = blocksToMarkdown(markdownToBlocks(md));
+    expect(out).toContain("# Title");
+    expect(out).toContain("## Sub");
+    expect(out).toContain("**bold**");
+    expect(out).toContain("`code`");
+    expect(out).toMatch(/^- a bullet$/m);
+    expect(out).toMatch(/^1\. a number$/m);
+    expect(out).toContain("> a quote");
+    expect(out).toContain("```");
+    expect(out).toContain("code line");
+    expect(out).toContain("---");
+  });
+
+  it("renders synthesized callouts and tables back to markdown", () => {
+    const plan = buildWikiPlan(fixture, {});
+    const brandMd = blocksToMarkdown(plan.areas.find((a) => a.key === "brand")!.blocks);
+    // the palette becomes a GFM table with a header divider row.
+    expect(brandMd).toContain("| Color | Hex | Role |");
+    expect(brandMd).toContain("| --- |");
+    expect(brandMd).toContain("#1f3a5f");
+    const bizMd = blocksToMarkdown(plan.areas.find((a) => a.key === "business-model")!.blocks);
+    expect(bizMd).toContain("> 💰"); // the numbers callout keeps its emoji
+    expect(bizMd).toContain("| Party | Role |"); // the parties table header
+  });
+
+  it("merges split rich text and keeps numbered lists sequential", () => {
+    const long = "a".repeat(2500);
+    const para: Block = { object: "block", type: "paragraph", paragraph: { rich_text: chunkRichText(long, { bold: true }) } };
+    expect(blocksToMarkdown([para])).toBe(`**${long}**`); // the 2000-char split merges into one bold run
+    expect(blocksToMarkdown(markdownToBlocks("1. one\n2. two\n3. three"))).toBe("1. one\n2. two\n3. three");
+  });
+});
+
+describe("wikiPlanToMarkdown", () => {
+  it("emits per-area markdown and carries the artifact list", () => {
+    const { manifest } = buildArtifactSet(fixture, { generatedAt: "2026-06-18T00:00:00.000Z" });
+    const urls: Record<string, string> = {};
+    for (const f of manifest.files) urls[f.path] = `https://github.com/o/r/blob/main/artifacts/demo/${f.path}`;
+    const pm = wikiPlanToMarkdown(buildWikiPlan(fixture, { manifest, urls }));
+
+    expect(pm.title).toBe("Acme Dispatch workspace");
+    expect(pm.icon).toBe("🚀");
+    expect(pm.overview).toContain("This private workspace");
+    // every populated area produces non-empty markdown; one canonical plan, two executors.
+    expect(pm.areas.length).toBeGreaterThan(0);
+    for (const a of pm.areas) expect(a.markdown.trim().length, `${a.key} empty markdown`).toBeGreaterThan(0);
+    expect(pm.areas.find((a) => a.key === "product")?.markdown).toContain("# PRD");
+    // artifacts carried through with their fields and GitHub urls.
+    expect(pm.artifacts.length).toBeGreaterThan(0);
+    expect(pm.artifacts.every((x) => x.name && x.category && typeof x.bytes === "number" && x.url)).toBe(true);
   });
 });
 

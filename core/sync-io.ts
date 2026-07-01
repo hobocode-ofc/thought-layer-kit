@@ -153,6 +153,10 @@ export function resolveWorkspace(opts: SyncRunOptions, cfg: SyncConfig): { clone
 function syncInit(opts: SyncRunOptions): StateOpResult {
   const repo = (opts.repo || "").trim();
   if (!repo) return fail("Pass the private repo to use: tl sync init --repo <owner/name or url> [--name <label>] [--dir <path>].");
+  // Hardening: a leading "-" would be read by git/gh as a flag (argument
+  // injection, e.g. git clone --upload-pack=<cmd>). Real repos never start with
+  // a dash, so reject it outright.
+  if (repo.startsWith("-")) return fail("The repo cannot start with '-'. Pass owner/name or a full https URL.", { repo });
 
   const home = homedir();
   const label = (opts.name || "").trim();

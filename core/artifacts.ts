@@ -15,7 +15,7 @@
 // infographic + markdown. See the plan's Phase 3.
 
 import { computeProjection, fmtMoney, type Assumptions } from "./model.ts";
-import { extractScaffoldSpec, buildStarterSite } from "./scaffold.ts";
+import { extractScaffoldSpec, buildStarterSite, safeSvg } from "./scaffold.ts";
 import type { ProgressState } from "./progress.ts";
 
 // ---- consumed state shapes (permissive; everything optional) -----------------
@@ -65,8 +65,10 @@ const obj = (v: unknown): Record<string, unknown> =>
   v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
 const esc = (s: unknown): string =>
-  String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const fam = (f: string): string => String(f).trim().replace(/\s+/g, "+");
+// safeSvg (logo sanitizer) is shared with the scaffold; import the single
+// hardened implementation rather than keeping a second copy that can drift.
 
 // ---- brand tokens + svg font block (ported from exports.js) ------------------
 
@@ -479,7 +481,7 @@ export function brandLookbookHtml(guide: BrandGuide | null | undefined, logoSvg?
   const tagline = esc(guide.tagline || "");
   const messaging = guide.messaging || [];
   const hero = esc(messaging[0] || guide.positioning || guide.brandName || "");
-  const lockup = logoSvg || `<span class="wordmark">${name}</span>`;
+  const lockup = safeSvg(logoSvg) || `<span class="wordmark">${name}</span>`;
   const initials = (guide.brandName || "B").split(/\s+/).map((w) => w[0] || "").join("").slice(0, 2).toUpperCase();
   const swatches = (guide.palette || []).map((p) =>
     `<div class="sw"><div class="chip" style="background:${esc(p.hex)}"></div><div class="swmeta"><strong>${esc(p.name)}</strong><code>${esc(p.hex)}</code><span>${esc(p.role)}</span></div></div>`).join("");
@@ -638,7 +640,7 @@ export function buildArtifactSet(state: ProgressState, opts: ArtifactBuildOption
   if (brand?.guide) {
     add("Brand/BrandStyleGuide.md", brandGuideMarkdown(brand.guide), "brand");
     const chosen = (brand.logos || []).find((l) => l.id === brand.chosenLogoId) || (brand.logos || [])[0];
-    if (chosen?.svg) add("Brand/Logo.svg", chosen.svg, "brand");
+    if (chosen?.svg) { const lg = safeSvg(chosen.svg); if (lg) add("Brand/Logo.svg", lg, "brand"); }
     add("Brand/LookBook.html", brandLookbookHtml(brand.guide, chosen?.svg), "brand");
   }
 

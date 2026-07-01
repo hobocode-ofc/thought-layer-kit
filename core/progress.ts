@@ -344,6 +344,7 @@ export function setCursor(state: ProgressState, cursor: KitCursor, ts: number): 
 // Park a panel note that has no web-app question id (module sub-stage verdicts,
 // later-stage concerns surfaced early) under the agent-owned kit namespace.
 export function parkNote(state: ProgressState, key: string, note: string, ts: number): ProgressState {
+  if (key === "__proto__" || key === "constructor" || key === "prototype") return state; // prototype-pollution guard
   const prev = (state.kit && typeof state.kit === "object") ? state.kit : { schema: 1, updatedAt: ts };
   const parked = { ...(prev.parked || {}) };
   parked[key] = [...(parked[key] || []), note];

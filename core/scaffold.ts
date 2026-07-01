@@ -70,6 +70,90 @@ const esc = (s: unknown): string =>
 
 const fam = (f: string): string => f.trim().replace(/\s+/g, "+");
 
+// Hardening: these values flow UNescaped into the generated <style> block,
+// attributes, or an inlined <svg>, so they are validated/sanitized here (text
+// content is escaped separately via esc()). A crafted brand value cannot break
+// out of the style block, an attribute, or inject script via the logo.
+const safeColor = (v: unknown, fb: string): string => {
+  const s = String(v ?? "").trim();
+  if (/^#[0-9a-fA-F]{3,8}$/.test(s)) return s;
+  if (/^[a-zA-Z]+$/.test(s)) return s; // CSS named color
+  if (/^(rgb|rgba|hsl|hsla)\([0-9.,%\s/]+\)$/.test(s)) return s;
+  return fb;
+};
+const safeFont = (v: unknown, fb: string): string =>
+  String(v ?? "").replace(/[^A-Za-z0-9 \-]/g, "").trim() || fb;
+const safeDomain = (v: unknown): string => {
+  const fb = "https://example.com";
+  try {
+    const u = new URL(String(v ?? ""));
+    if (u.protocol !== "http:" && u.protocol !== "https:") return fb;
+    const clean = (u.origin + u.pathname).replace(/\/+$/, "");
+    return /[\s"'<>]/.test(clean) ? fb : clean;
+  } catch {
+    return fb;
+  }
+};
+// Strip executable and exfiltration surfaces from an agent-supplied logo SVG
+// before inlining it into HTML (scaffold index.html, LookBook.html) or shipping
+// it as a standalone Brand/Logo.svg. The source is brand.logos[].svg, which is
+// attacker-influenceable through a synced/shared state file, so this is a real
+// XSS boundary. A decorative logo needs none of the removed elements, so we drop
+// whole dangerous element CLASSES (namespace-agnostic, tolerant of a missing
+// close tag) rather than trying to allow-list attributes inside them — regex
+// attribute allow-through is exactly where SVG sanitizers leak.
+export const safeSvg = (v: unknown): string => {
+  let s = String(v ?? "");
+  if (!/^\s*<svg[\s>]/i.test(s)) return "";
+  const ns = "(?:[a-zA-Z][\\w.-]*:)?"; // optional XML namespace prefix, e.g. <svg:script>
+  // 1) Content-bearing dangerous elements: remove the element AND its body,
+  //    tolerating a MISSING close tag — an unclosed <script>alert(1) would slip
+  //    past a paired-tag regex, so "|$" extends the match to end-of-string when
+  //    no close exists and drops the whole body.
+  for (const name of ["script", "style", "foreignObject"]) {
+    s = s.replace(new RegExp(`<\\s*${ns}${name}\\b[\\s\\S]*?(?:<\\s*/\\s*${ns}${name}[^>]*>|$)`, "gi"), "");
+  }
+  // 2) Elements a logo never needs that carry animation, script, or external
+  //    references (SMIL <animate>/<set> can retarget an href to javascript:;
+  //    use/image/a/object can pull remote or data: content). Drop the element,
+  //    its body, and any stray/unclosed start tag or orphan close tag.
+  const drop = [
+    "animate", "animateTransform", "animateMotion", "animateColor", "set",
+    "use", "image", "a", "iframe", "audio", "video", "embed", "object",
+    "handler", "listener", "link", "meta",
+  ];
+  for (const name of drop) {
+    s = s
+      .replace(new RegExp(`<\\s*${ns}${name}\\b[\\s\\S]*?<\\s*/\\s*${ns}${name}[^>]*>`, "gi"), "")
+      .replace(new RegExp(`<\\s*${ns}${name}\\b[^>]*>?`, "gi"), "")
+      .replace(new RegExp(`<\\s*/\\s*${ns}${name}[^>]*>`, "gi"), "");
+  }
+  // 3) Inline event handlers on any surviving element. The separator before the
+  //    handler may be whitespace OR "/" — the HTML parser accepts <rect/onload=>.
+  s = s.replace(/[\s/]on[a-z0-9_-]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, " ");
+  // 4) Belt-and-suspenders scheme guard for any href/xlink:href that survived.
+  //    Decode numeric HTML entities and strip whitespace/control chars BEFORE
+  //    testing the scheme, so "&#106;avascript:" and "java\tscript:" cannot
+  //    smuggle a live scheme. Keep only fragment, relative, http(s) and mailto.
+  s = s.replace(/(?:xlink:)?href\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, (m, val: string) => {
+    const raw = String(val).replace(/^["']|["']$/g, "");
+    let decoded: string;
+    try {
+      decoded = raw
+        .replace(/&#x([0-9a-f]+);?/gi, (_m, h: string) => String.fromCodePoint(parseInt(h, 16)))
+        .replace(/&#(\d+);?/g, (_m, d: string) => String.fromCodePoint(parseInt(d, 10)));
+    } catch {
+      return ""; // malformed entity -> drop the attribute rather than guess
+    }
+    decoded = decoded.replace(/[\s\u0000-\u001f]/g, "");
+    if (decoded === "" || /^#/.test(decoded)) return m;      // empty / fragment
+    if (/^(?:https?|mailto):/i.test(decoded)) return m;      // safe absolute scheme
+    if (/^[a-z][a-z0-9+.-]*:/i.test(decoded)) return "";     // any other scheme -> drop
+    return m;                                                // schemeless relative path
+  });
+  return s;
+};
+
 // ---- extract a spec from the portable state file -----------------------------
 
 export function extractScaffoldSpec(state: ProgressState): StarterSiteSpec {
@@ -249,7 +333,23 @@ function companionFiles(spec: StarterSiteSpec, opts: ScaffoldOptions): Record<st
 }
 
 export function buildStarterSite(spec: StarterSiteSpec, opts: ScaffoldOptions = {}): { files: Record<string, string> } {
-  return { files: { "index.html": indexHtml(spec, opts), ...companionFiles(spec, opts) } };
+  // Sanitize the values that get interpolated unescaped (CSS vars, attributes,
+  // inlined SVG) before building; esc() still handles all text content.
+  const s: StarterSiteSpec = {
+    ...spec,
+    palette: {
+      primary: safeColor(spec.palette?.primary, "#1f3a5f"),
+      accent: safeColor(spec.palette?.accent, "#e8743b"),
+      ink: safeColor(spec.palette?.ink, "#16202b"),
+      surface: safeColor(spec.palette?.surface, "#f7f8fa"),
+      muted: safeColor(spec.palette?.muted, "#8a9099"),
+    },
+    displayFont: safeFont(spec.displayFont, "Inter"),
+    bodyFont: safeFont(spec.bodyFont, "Inter"),
+    logoSvg: spec.logoSvg ? safeSvg(spec.logoSvg) || undefined : undefined,
+  };
+  const o: ScaffoldOptions = { ...opts, domain: safeDomain(opts.domain) };
+  return { files: { "index.html": indexHtml(s, o), ...companionFiles(s, o) } };
 }
 
 // ---- the manifest (scaffold producer) ----------------------------------------

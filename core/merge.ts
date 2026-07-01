@@ -37,6 +37,11 @@ const jsonEq = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.s
 const rec = (v: unknown): Record<string, unknown> =>
   v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
+// Keys never copied from parsed/synced data via bracket assignment
+// (prototype-pollution hardening for the sync-ingest path: a tampered or
+// malicious session file could otherwise carry an "__proto__" key).
+const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
 // Merge `ours` and `theirs` into one state. Tie-break direction: a strictly
 // newer file wins; on an exact timestamp tie the incoming side (theirs) wins, so
 // the result is deterministic regardless of which clone runs the merge.
@@ -49,6 +54,7 @@ export function mergeProgressStates(ours: ProgressState, theirs: ProgressState, 
   const oa = rec(ours.answers);
   const ta = rec(theirs.answers);
   for (const k of new Set([...Object.keys(oa), ...Object.keys(ta)])) {
+    if (UNSAFE_KEYS.has(k)) continue;
     const inO = k in oa;
     const inT = k in ta;
     if (inO && !inT) answers[k] = oa[k];
@@ -65,6 +71,7 @@ export function mergeProgressStates(ours: ProgressState, theirs: ProgressState, 
   const of = rec(ours.feedback);
   const tf = rec(theirs.feedback);
   for (const k of new Set([...Object.keys(of), ...Object.keys(tf)])) {
+    if (UNSAFE_KEYS.has(k)) continue;
     const o = of[k];
     const t = tf[k];
     if (o != null && t == null) feedback[k] = o;
@@ -116,7 +123,7 @@ export function mergeProgressStates(ours: ProgressState, theirs: ProgressState, 
   // Apply the older side first, then the newer, so the newer value overwrites.
   for (const src of oursNewer ? [theirs, ours] : [ours, theirs]) {
     for (const k of Object.keys(src)) {
-      if (!(KNOWN_STATE_KEYS as readonly string[]).includes(k)) merged[k] = (src as Record<string, unknown>)[k];
+      if (!UNSAFE_KEYS.has(k) && !(KNOWN_STATE_KEYS as readonly string[]).includes(k)) merged[k] = (src as Record<string, unknown>)[k];
     }
   }
 
@@ -137,6 +144,7 @@ function mergeKit(o: KitNamespace | null, t: KitNamespace | null, oursNewer: boo
   const parked: Record<string, string[]> = {};
   for (const src of [oo.parked || {}, tt.parked || {}]) {
     for (const [k, v] of Object.entries(src)) {
+      if (UNSAFE_KEYS.has(k)) continue;
       parked[k] = Array.from(new Set([...(parked[k] || []), ...(Array.isArray(v) ? v : [])]));
     }
   }
